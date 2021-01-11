@@ -1,0 +1,582 @@
+[toc]
+
+# 归并排序
+
+## 原理
+
+递归地将数组分成两半分别排序，然后将结果归并起来。
+
+关键在于merge，他将子数组 a[lo..mid] 和 a[mid+1..hi] 归并成一个有序的数组并将结果存在 a[lo..hi] 中。该方法先将所有元素复制到aux[] 中，然后再归并回 a[]。再归并时（第二个 for）进行4个条件判断：左边用尽（取右半边元素）；右边用尽（取左半边元素）；右半边的当前元素小于左半边的当前元素，取右半边的元素；左半边的当前元素小于右半边的当前元素，取左半边的元素
+
+## 特点
+
+>   对于长度为N的任意数组，自顶向下/自底向上的归并排序需要 $\frac{1}{2}NlgN$ 至 $NlgN$ 次比较
+
+>   对于长度为N的任意数组，自顶向下的归并排序最多需要访问数组 $6NlgN$ 次
+
+## 自顶向下
+
+```java
+public class Merge {
+    //辅助数组
+    private static Comparable[] aux;
+
+    public static void sort(Comparable[] a) {
+        //一次性分配空间
+        aux = new Comparable[a.length];
+        sort(a, 0, a.length - 1);
+    }
+
+    public static void sort(Comparable[] a, int lo, int hi) {
+        if (hi <= lo) {
+            return;
+        }
+
+        int mid = (hi + lo) / 2;
+        sort(a, lo, mid); //左边排序
+        sort(a, mid + 1, hi); //右边排序
+        merge(a, lo, mid, hi); //归并结果
+    }
+    
+	//将 a[lo..mid] 和 a[mid+1..hi]归并
+    public static void merge(Comparable[] a, int lo, int mid, int hi) {
+        int i = lo;
+        int j = mid + 1;
+
+        //将 a[lo..hi] 复制到 aux[lo..hi]
+        for (int k = lo; k <= hi; k++) {
+            aux[k] = a[k];
+        }
+
+        for (int k = lo; k <= hi; k++) {
+
+            if (i > mid) {//左边用尽
+                a[k] = aux[j++];
+            }
+            else if (j > hi) {//右边用尽
+                a[k] = aux[i++];
+            }
+            //右半边的当前元素小于左半边的当前元素，取右半边的元素
+            else if (less(aux[j], aux[i])) {
+                a[k] = aux[j++];
+            }
+            //左半边的当前元素小于右半边的当前元素，取左半边的元素
+            else {
+                a[k] = aux[i++];
+            }
+        }
+    }
+
+    private static boolean less(Comparable v, Comparable w) {
+        return v.compareTo(w) < 0;
+    }
+}
+```
+
+### 改进1
+
+在库函数中使用aux[]这样的静态数组不妥，因为可能会有多个程序同时使用这个类，所以可以将aux[]作为参数传给递归地sort()方法
+
+
+```java
+public class Merge {
+    // stably merge a[lo .. mid] with a[mid+1 ..hi] using aux[lo .. hi]
+    private static void merge(Comparable[] a, Comparable[] aux, int lo, int mid, int hi) {
+        // precondition: a[lo .. mid] and a[mid+1 .. hi] are sorted subarrays
+        assert isSorted(a, lo, mid);
+        assert isSorted(a, mid+1, hi);
+
+        // copy to aux[]
+        for (int k = lo; k <= hi; k++) {
+            aux[k] = a[k]; 
+        }
+
+        // merge back to a[]
+        int i = lo, j = mid+1;
+        for (int k = lo; k <= hi; k++) {
+            if      (i > mid)              a[k] = aux[j++];
+            else if (j > hi)               a[k] = aux[i++];
+            else if (less(aux[j], aux[i])) a[k] = aux[j++];
+            else                           a[k] = aux[i++];
+        }
+
+        // postcondition: a[lo .. hi] is sorted
+        assert isSorted(a, lo, hi);
+    }
+
+    // mergesort a[lo..hi] using auxiliary array aux[lo..hi]
+    private static void sort(Comparable[] a, Comparable[] aux, int lo, int hi) {
+        if (hi <= lo) return;
+        int mid = lo + (hi - lo) / 2;
+        sort(a, aux, lo, mid);
+        sort(a, aux, mid + 1, hi);
+        merge(a, aux, lo, mid, hi);
+    }
+
+    public static void sort(Comparable[] a) {
+        Comparable[] aux = new Comparable[a.length];
+        sort(a, aux, 0, a.length-1);
+        assert isSorted(a);
+    }
+```
+
+### 改进2
+
+-   加快小数组的排序速度
+
+-   如果a[mid]小于等于a[mid+1]，数组已经是有序的并跳过merge()方法
+
+-   通过在递归中交换参数避免数组复制
+
+```java
+import java.util.Comparator;
+
+public class MergeX {
+    private static final int CUTOFF = 7;  // cutoff to insertion sort
+
+    private static void merge(Comparable[] src, Comparable[] dst, int lo, int mid, int hi) {
+
+        // precondition: src[lo .. mid] and src[mid+1 .. hi] are sorted subarrays
+        assert isSorted(src, lo, mid);
+        assert isSorted(src, mid+1, hi);
+
+        int i = lo, j = mid+1;
+        for (int k = lo; k <= hi; k++) {
+            if      (i > mid)              dst[k] = src[j++];
+            else if (j > hi)               dst[k] = src[i++];
+            else if (less(src[j], src[i])) dst[k] = src[j++];   // to ensure stability
+            else                           dst[k] = src[i++];
+        }
+
+        // postcondition: dst[lo .. hi] is sorted subarray
+        assert isSorted(dst, lo, hi);
+    }
+
+    private static void sort(Comparable[] src, Comparable[] dst, int lo, int hi) {
+        // if (hi <= lo) return;
+        if (hi <= lo + CUTOFF) { 
+            insertionSort(dst, lo, hi);
+            return;
+        }
+        int mid = lo + (hi - lo) / 2;
+        sort(dst, src, lo, mid);
+        sort(dst, src, mid+1, hi);
+
+        // if (!less(src[mid+1], src[mid])) {
+        //    for (int i = lo; i <= hi; i++) dst[i] = src[i];
+        //    return;
+        // }
+
+        // using System.arraycopy() is a bit faster than the above loop
+        if (!less(src[mid+1], src[mid])) {
+            System.arraycopy(src, lo, dst, lo, hi - lo + 1);
+            return;
+        }
+
+        merge(src, dst, lo, mid, hi);
+    }
+
+    /**
+     * Rearranges the array in ascending order, using the natural order.
+     * @param a the array to be sorted
+     */
+    public static void sort(Comparable[] a) {
+        Comparable[] aux = a.clone();
+        sort(aux, a, 0, a.length-1);  
+        assert isSorted(a);
+    }
+
+    // sort from a[lo] to a[hi] using insertion sort
+    private static void insertionSort(Comparable[] a, int lo, int hi) {
+        for (int i = lo; i <= hi; i++)
+            for (int j = i; j > lo && less(a[j], a[j-1]); j--)
+                exch(a, j, j-1);
+    }
+```
+
+
+
+## 自底向上
+
+先归并那些微型数组，然后再成对归并并得到子数组。两两归并，再四四归并，再八八的归并
+
+比较适合用链表组织的数据
+
+```java
+public class Merge {
+    private static Comparable[] aux;
+
+    public static void sort(Comparable[] a){
+        int N = a.length;
+        aux = new Comparable[N];
+        for (int sz = 1; sz < N; sz = sz + sz) { //sz子数组大小
+            for (int lo = 0; lo < N - sz; lo += sz + sz) { //lo：子数组索引
+                merge(a, lo, lo + sz - 1, Math.min(lo + sz + sz - 1, N - 1));
+            }
+        }
+    }
+}
+
+```
+
+# 快速排序
+
+## 原理
+
+将一个数组分成两个子数组，将两部分独立地排序。
+
+关键在于切分，使数组满足，对于某个j，a[j] 已经排定：
+
+-   a[lo] 到 a[j-1] 中的所有元素不大于a[j] （可以等于）
+-   a[j+1] 到 a[hi] 中的所有元素不小于a[j] （可以等于）
+
+数组就变成左子数组，切分元素，右子树组
+
+一般策略：先随意的取a[lo]作为切分元素，从数组的左端开始向右扫描直到找到一个大于等于他的元素，再从数组的右端开始向左扫描直到找到一个小于等于他的元素。交换他们的位置。如此继续，可以保证左指针i的左侧元素不大于切分元素，右指针j的右侧元素不小于切分元素。当两个指针相遇时，将切分元素与左子数组最右侧元素交换，并返回j。
+
+## 特点
+
+快速排序和归并排序是互补的。归并排序将数组分成两个子数组分别排序，并将有序的子数组归并以将整个数组排序；而快速排序将数组的排序的方式是当两个子数组都有序时，整个数组就自然有序了。归并中，递归调用在处理数组前；快速中，递归发生在处理数组后。归并中，一个数组被分成两半；快速中，切分的位置取决于数组的内容。
+
+```java
+public class Quick {
+
+    public static void sort(Comparable[] a) {
+        //可以先打乱数组以消除对输出的依赖
+        sort(a, 0, a.length - 1);
+    }
+
+    public static void sort(Comparable[] a, int lo, int hi) {
+        if (hi <= lo) return;
+        int j = partition(a, lo, hi);
+        sort(a, lo, j - 1); //将左半部分 a[lo..j-1] 排序
+        sort(a, j + 1, hi); //将右半部分 a[j+1..hi] 排序
+    }
+    
+    //将数组分成a[lo..i-1], a[i], a[i+1..hi]
+    public static int partition(Comparable[] a, int lo, int hi) {
+        //左右扫描指针
+        int i = lo;
+        int j = hi + 1;
+        //切分元素
+        Comparable v = a[lo];
+
+        while (true) {
+            //扫描左右，检查扫描是否结束并交换元素。
+            //用++i，而不用i++是因为不小于时i需要停下等待交换，不能指向下一个元素
+            while (less(a[++i], v)) {
+                if (i == hi) break;
+            }
+            while (less(v, a[--j])) {
+                if (j == lo) break;
+            }
+            if (i >= j) {
+                break;
+            }
+            exch(a, i, j);
+        }
+        exch(a, lo, j);//将切分元素放在正确位置
+        return j; // a[lo..j-1] <= a[j] <= a[j+1..hi]
+    }
+
+    public static boolean less(Comparable v, Comparable w) {
+        return v.compareTo(w) < 0;
+    }
+
+    public static void exch(Comparable[] a, int i, int j) {
+        Comparable t = a[i];
+        a[i] = a[j];
+        a[j] = t;
+    }
+}
+
+```
+
+## 三向切分
+
+在有大量重复元素的情况下，快速排序的递归性会使元素全部重复的子数组经常出现。
+
+三向切分的切分，从左到右遍历数组一次，维护一个指针 lt 使得 a[lo..lt-1] 中的元素都小于v（小于v的元素要插入的位置）；一个指针 gt 使得a[gt+1..hi] 中的元素都大于v（大于v的元素要插入的位置）；一个指针 i 使得a[lt..i-1]中的元素都等于v。
+
+对 a[i]进行三向比较来处理一下情况：
+
+-   a[i] 小于v，将 a[lt] 和 a[i] 交换， lt和i 加一
+-   a[i] 大于v， 将 a[gt] 和 a[i] 交换，gt 减一 （i不加一，因为不知道换过来的元素是多少）
+-   a[i] 等于v，i加一
+
+```java
+private static void sort(Comparable[] a, int lo, int hi) { 
+    if (hi <= lo) return;
+    int lt = lo, gt = hi;
+    Comparable v = a[lo];
+    int i = lo + 1;
+    while (i <= gt) {
+        int cmp = a[i].compareTo(v);
+        if      (cmp < 0) exch(a, lt++, i++);
+        else if (cmp > 0) exch(a, i, gt--);
+        else              i++;
+    }
+
+    // a[lo..lt-1] < v = a[lt..gt] < a[gt+1..hi]. 
+    sort(a, lo, lt-1);
+    sort(a, gt+1, hi);
+}
+```
+
+# 优先队列
+
+取出元素的顺序是依照元素的优先权（关键字）大小，而不是元素进入队列的先后顺序
+
+## 初级实现
+
+有序数组：insert中将所有较大的元素向右边移动一格，使数组保持有序（类似插入排序）。删除就和栈的pop一样。
+
+```java
+public class OrderArrayMaxPQ<Key extends Comparable<Key>> {
+    private Key[] pq;
+    private int n;
+
+    public OrderArrayMaxPQ(int capacity) {
+        pq = (Key[]) new Comparable[capacity];
+        n = 0;
+    }
+
+    public int size() {
+        return n;
+    }
+
+    public boolean isEmpty() {
+        return n == 0;
+    }
+
+    public Key delMax() {
+        return pq[--n];
+    }
+
+    public void insert(Key key) {
+        int i = n - 1;
+        while (i >= 0 && less(key, pq[i])) {
+            pq[i+1] = pq[i];
+            i--;
+        }
+        pq[i+1] = key;
+        n++;
+    }
+
+    private boolean less(Key v, Key w) {
+        return v.compareTo(w) < 0;
+    }
+}
+```
+
+无序数组：insert与栈的push一样。要实现删除最大元素，添加一段类似选择排序的内循环代码，将最大元素与边界元素交换并删除。
+
+```java
+public class UnOrderArrayMaxPQ<Key extends Comparable<Key>> {
+    private Key[] pq;
+    private int n;
+
+    public UnOrderArrayMaxPQ(int capacity) {
+        pq = (Key[]) new Comparable[capacity];
+        n = 0;
+    }
+
+    public boolean isEmpty() {
+        return n == 0;
+    }
+
+    public int size() {
+        return n;
+    }
+
+    public Key delMax() {
+        int max = 0;
+        for (int i = 1; i < n; i++) {
+            if (less(max, i)) {
+                max = i;
+            }
+        }
+        exch(max, n - 1);
+        return pq[--n];
+    }
+
+    public void insert(Key key) {
+        pq[n++] = key;
+    }
+
+    private boolean less(int i, int j) {
+        return pq[i].compareTo(pq[j]) < 0;
+    }
+
+    private void exch(int i, int j) {
+        Key swap = pq[i];
+        pq[i] = pq[j];
+        pq[j] = swap;
+    }
+}
+```
+
+
+
+| 数据结构 | 插入元素 | 删除最大元素 |
+| -------- | -------- | ------------ |
+| 有序数组 | N        | 1            |
+| 无序数组 | 1        | N            |
+| 堆       | logN     | logN         |
+
+检查一个小顶堆是否有序的递归写法
+
+```java
+// is subtree of pq[1..n] rooted at k a min heap?
+private boolean isMinHeapOrdered(int k) {
+    if (k > n) return true;
+    int left = 2*k;
+    int right = 2*k + 1;
+    if (left  <= n && greater(k, left))  return false;
+    if (right <= n && greater(k, right)) return false;
+    return isMinHeapOrdered(left) && isMinHeapOrdered(right);
+}
+```
+
+## 堆
+
+>   当一棵二叉树的每个结点都大于等于它的两个子节点时，他被称为**堆有序**
+
+>   根结点是堆有序的二叉树中的最大结点
+
+>   **二叉堆**是一组能够用堆有序的完全二叉树排序的元素，并在数组中按层级储存（不使用数组的第一个位置）
+
+在一个二叉堆中，位置k的结点的父结点的位置为k/2，而他的两个子节点位置分别是2k 和 2k+1。所以a[k]  向上一层就是令k等于k/2，向下一层就是令k等于2k 或 2k+1
+
+>   一棵大小为N的完全二叉树的高度为 lgN
+
+往二叉堆里插入元素时，如果堆的有序状态因为某个结点变得比他的父结点更大而打破，那么通过交换他和他的父结点来修复堆（交换后这个结点比他结点都大，因为另一个是曾经父结点的子结点）；删除元素时，如果某个结点比他的两个子结点或是其中之一更小了，就将他和他的两个子结点中的较大者交换（跟交大的子结点交换因为新的父结点要比两个子结点都大）。
+
+// <Key extends Comparable<Key>>说明Key对象会有compareTo方法，如果改成<Key>, 会报cannot find symbol symbol：method compareTo()
+
+```java
+public class MaxPQ<Key extends Comparable<Key>> {
+    private Key[] pq;
+    private int N = 0;  //存储在pq[1..N]中，pq[0]没有使用
+
+    public MaxPQ(int maxN) {
+        pq = (Key[]) new Comparable[maxN + 1];
+    }
+
+    public boolean isEmpty() {
+        return N == 0;
+    }
+
+    public int size() {
+        return N;
+    }
+
+    public void insert(Key v) {
+        //将新元素加到数组末尾，增加堆大小，新元素上浮
+        pq[++N] = v;
+        swim(N);
+    }
+
+    public Key delMax() {
+        //把最后一个元素放到顶端，减小堆的大小，元素下沉
+        Key max = pq[1];
+        exch(1, N--);
+        pq[N + 1] = null;   //防止对象游离
+        sink(1);
+        return max;
+    }
+
+    private boolean less(int i, int j) {
+        return pq[i].compareTo(pq[j]) < 0;
+    }
+
+    private void exch(int i, int j) {
+        Key t = pq[i];
+        pq[i] = pq[j];
+        pq[j] = t;
+    }
+
+    private void swim(int k) {
+        while (k > 1 && less(k / 2, k)) {
+            exch(k / 2, k);
+            k = k / 2;
+        }
+    }
+
+    private void sink(int k) {
+        while (2 * k < N) {
+            int j = 2 * k;
+            if (j < N && less(j, j + 1)) {
+                j++;
+            }
+            if (!less(k, j)) {
+                break;
+            }
+            exch(k, j);
+            k = j;
+        }
+    }
+}
+
+```
+
+## 堆排序
+
+## 原理
+
+堆排序分为两个阶段。构造阶段，将原始数组重新组织安排进一个堆中；下沉排序阶段，从堆中按递减顺序取出所有元素并得到排序结果。
+
+-   构造阶段的目标是构造一个堆排序的数组并使最大元素位于数组的开头。for循环里，从最后一个非叶子结点开始，从右至左用sink函数构造子堆。如果一个结点的两个子结点已经是堆，那么在改结点上调用sink()可以将他们变成一个堆。
+
+-   下沉阶段，将堆中的最大元素删除，然后放入堆缩小后数组中空出的位置。while循环将最大的元素a[1] 和 a[N] 交换并修复堆，如此重复直到堆变空。
+
+// exch和less的实现中索引要减一，因为是从a[1]开始存
+
+## 特点
+
+>   用下沉操作由N个元素构造堆只需要少于2N次比较及少于N次交换
+
+>   将N个元素排序，堆排序只需要少于 (2NlgN+2N)次比较 （以及一半次数的交换）
+
+```java
+public class Heap {
+    public static void sort(Comparable[] a) {
+        int N = a.length;
+        //堆的构造
+        for (int k = N / 2; k >= 1; k--) {
+            sink(a, k, N);
+        }
+        //下沉
+        while (N > 1){
+            exch(a,1,N--);
+            sink(a,1,N);
+        }
+    }
+
+    private static void sink(Comparable[] a, int k, int N) {
+        while (2 * k <= N) {
+            int j = 2 * k;
+            if (j < N && less(a, j, j + 1)) {
+                j++;
+            }
+            if (!less(a, k, j)) {
+                break;
+            }
+            exch(a, k, j);
+            k = j;
+        }
+    }
+
+    private static boolean less(Comparable[] a, int i, int j) {
+        return a[i - 1].compareTo(a[j - 1]) < 0;
+    }
+
+    private static void exch(Object[] a, int i, int j) {
+        Object t = a[i - 1];
+        a[i - 1] = a[j - 1];
+        a[j - 1] = t;
+    }
+}
+
+```
+
