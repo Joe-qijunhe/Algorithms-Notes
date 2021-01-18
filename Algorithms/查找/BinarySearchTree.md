@@ -1,0 +1,459 @@
+[toc]
+
+# 二叉查找树
+
+二叉查找树将链表插入的灵活性和有序数组查找的高效性结合了起来。由结点组成，结点包含的链接可以为空或者指向其他结点。每个结点只能有一个父结点（除了根结点），而且每个结点都只有左右两个链接，分别指向自己的左子结点和右子结点，也可以将每个链接看做指向了另一棵二叉树，而这棵树的根结点就是被指向的结点。
+
+>   一棵二叉查找树（BST）一棵二叉树，其中每个结点都含有一个Comparable的键（以及相关联的值）且每个结点的键都大于其左子树中的任意结点的键，而小于右子树的任意结点的键。
+
+>   在一棵二叉查找树中，所有操作在最坏情况下所需的时间都和树的高度成正比
+
+```java
+public class BST<Key extends Comparable<Key>, Value> {
+    private Node root;
+    
+    private class Node{
+        private Key key;
+        private Value val;
+        private Node left;
+        private Node right;
+        private int n;
+
+        public Node(Key key, Value val, int n) {
+            this.key = key;
+            this.val = val;
+            this.n = n;
+        }
+    }
+    
+    private int size(){
+        return size(root);
+    }
+    
+    private int size(Node x){
+        if (x == null) return 0;
+        return x.n;
+    }
+}
+
+```
+
+## 查找
+
+-   如果树是空的，则查找未命中；
+
+-   如果被查找的键和根结点的键相等，查找命中；
+
+-   如果被查找的键较小就选择左子树，较大则选择右子树。
+
+对于命中的查找，路径在含有被查找的键的结点处结束。对于未命中的查找，路径的终点是一个空链接
+
+```java
+    public Value get(Key key) {
+        return get(root,key);
+    }
+
+    private Value get(Node x, Key key) {
+        //以X为根结点的子树中查找，并返回key所对应的值
+        if (x == null) return null;
+        int cmp = key.compareTo(x.key);
+        if (cmp < 0) 
+            return get(x.left, key);
+        if (cmp > 0) 
+            return get(x.right, key);
+        else 
+            return x.val;
+    }
+```
+
+迭代（无计数器）：
+
+```java
+    Value get(Key key) {
+        Node x = root;
+        while (x != null) {
+            int cmp = key.compareTo(x.key);
+            if      (cmp < 0) x = x.left;
+            else if (cmp > 0) x = x.right;
+            else return x.val;
+        }
+        return null;
+    }
+```
+
+## 插入
+
+有涉及到修改树的操作时都要x.left = xxx;
+
+-   如果树是空的，就返回一个含有该键值对的新结点
+
+-   如果被查找的键小于根结点的键，继续在左子树中插入该键，否则在右子树中插入该键。
+
+```java
+    public void put(Key key, Value val){
+        root = put(root, key, val);
+    }
+
+    private Node put(Node x, Key key, Value val){
+        //如果key存在于以x为结点的子树中，则更新它的值
+        //否则，将以key和val为键值对的新结点插入到该子树
+        if (x == null) return new Node(key, val,1);
+        int cmp = key.compareTo(x.key);
+        if (cmp < 0 )
+            x.left = put(x.left, key, val);
+        else if (cmp > 0)
+            x.right = put(x.right, key, val);
+        else
+            x.val = val;
+        x.n = size(x.left) + size(x.right) + 1;
+        return x;
+    }
+```
+
+迭代（无计数器）：
+
+```java
+    public void put(Key key, Value val) {
+        Node z = new Node(key, val);
+        if (root == null) {
+            root = z;
+            return;
+        }
+
+        Node parent = null, x = root;
+        while (x != null) {
+            //x == null时，parent记录了父结点
+            parent = x;
+            int cmp = key.compareTo(x.key);
+            if      (cmp < 0) x = x.left;
+            else if (cmp > 0) x = x.right;
+            else {
+                x.val = val;
+                z = null;	//防止对象游离
+                return; 
+            }
+        }
+        int cmp = key.compareTo(parent.key);
+        if (cmp < 0) parent.left  = z;
+        else         parent.right = z;
+    }
+```
+
+
+
+二叉查找树的另一个特性就是插入的实现难度和查找差不多。
+
+可以将递归调用前的代码想象成沿着树向下走，递归后的代码想象成沿着树往上爬。对于get() 方法，这对应着return，对于put()，这意味着<u>重置搜索路径上每个父结点指向子结点的链接</u>，并<u>增加路径上每个结点中的计数器的值</u>。
+
+>在由N个随机键构成的二叉查找树中，查找命中平均所需要的比较次数为2lnN
+
+>   在由N个随机键构成的二叉查找树中插入操作和查找未命中平均所需的比较次数为2lnN
+
+## 最大键和最小键
+
+最小键：
+
+-   如果根结点的左链接为空，那么一棵二叉查找树中最小的键就是根结点
+
+-   如果左链接非空，那么树中最小的就是左子树中的最小键。
+
+```java
+    public Key min(){
+        return min(root).key;
+    }
+    
+    private Node min(Node x){
+        if (x.left == null) return x;
+        return min(x.left);
+    }
+    
+    public Key max(){
+        return max(root).key;
+    }
+    
+    private Node max(Node x){
+        if (x.right == null) return x;
+        return max(x.right);
+    }
+```
+
+## 向上取整和向下取整
+
+向下取整：
+
+-   如果给定的key小于二叉查找树的根结点的键，小于等于key的最大键一定在根结点的左子树中。（投影到数组来看的话，key一定在根结点索引的左边）
+
+-   如果给定的key大于二叉查找树的根结点的键，那么只有当根结点右子树存在小于等于key的节点时，小于等于key的最大键才会出现在右子树中，否则根结点就是小于等于key的最大键。
+
+例子：3，4，5，插入3.2和4.2，root = 4
+
+```java
+    public Key floor(Key key){
+        return floor(root, key).key;
+    }
+
+    private Node floor(Node x, Key key){
+        if (x == null) return null;
+        int cmp = key.compareTo(x.key);
+        if (cmp == 0)
+            return x;
+        if (cmp < 0)
+            return floor(x.left, key);
+        Node t = floor(x.right, key);
+        if (t != null)
+            return t;
+        else
+            return x;
+    }
+
+    public Key ceiling(Key key){
+        return ceiling(root, key).key;
+    }
+
+    private Node ceiling(Node x, Key key){
+        if (x == null) return null;
+        int cmp = key.compareTo(x.key);
+        if (cmp == 0)
+            return x;
+        if (cmp > 0)
+            return ceiling(x.right, key);
+        Node t = ceiling(x.left, key);
+        if (t != null)
+            return t;
+        else
+            return x;
+    }
+```
+
+## 选择和排名
+
+选择和排名往树的左边走时，位置是一样的，不需要处理。但往右边走时，由于是相对位置，相对于右子数，所以要处理。对于选择就是选择右子树的k - t -1个，对于排名就是加上左子树和根的size。
+
+选择：
+
+-   找到排名为k的键（索引为k / 树中有k个小于它的键）。如果左子树中的结点数 t 大于 k， 那么就继续（递归地）在左子树中查找排名为k的键；
+
+-   t等于k，就返回根结点中的键。
+-   t小于k，就（递归地）在右子树中查找排名为（k-t-1）的键。映射在数组上的话，t其实就是当前根结点的索引，搜索右子树是从索引0开始的，所以k-t-1，-t（左子树结点数）-1（根结点）
+
+```java
+    public Key select(int k) {
+        return select(root, k).key;
+    }
+
+    private Node select(Node x, int k) {
+        if (x == null) return null;
+        int t = size(x.left);
+        if (t > k)
+            return select(x.left, k);
+        else if (t < k)
+            return select(x.right, k - t - 1);
+        else
+            return x;
+    }
+```
+
+排名：
+
+-   如果给定的键和根结点的键相等，我们返回左子树中的结点总数t
+-   如果给定的键小于根结点，返回该键在左子树中的排名
+-   如果给定的键大于根结点，返回 t（左边的结点数）+ 1 （根结点）+ 在右子树中的排名
+
+```java
+    public int rank(Key key) {
+        return rank(root, key);
+    }
+
+    private int rank(Node x, Key key){
+        if (x == null) return 0;
+        int cmp = key.compareTo(x.key);
+        if (cmp < 0)
+            return rank(x.left, key);
+        else if (cmp > 0)
+            return size(x.left) + 1 + rank(x.right, key);
+        else 
+            return size(x.left);
+    }
+```
+
+## 删除
+
+删除最小键：
+
+不断深入根结点的左子树中直至遇见一个空链接，然后将指向改结点的链接指向该结点的右子树，并更新它到根结点的路径上的所有结点的计数器
+
+```java
+    public void deleteMin(){
+        deleteMin(root);
+    }
+
+    private Node deleteMin(Node x){
+        if (x.left == null) 
+            return x.right;
+        x.left = deleteMin(x.left);
+        x.n = size(x.left) + size(x.right) + 1;
+        return x;
+    }
+    
+    public void deleteMax(){
+        deleteMax(root);
+    }
+    
+    private Node deleteMax(Node x){
+        if (x.right == null)
+            return x.left;
+        x.right = deleteMax(x.right);
+        x.n = size(x.left) + size(x.right) + 1;
+        return x;
+    }
+```
+
+如果要删除一个拥有两个子结点的结点，删除之后要处理两棵子数，但被删除结点的父结点只有一条空出来的链接。
+
+T.Hibbard 法：在删除结点x后用它的后继结点填补。因为x有一个右子结点，因此它的后继结点就是其右子数中最小结点。这样的替换依然能保证树的有序性，因为x.key和后继结点的键之间不存在其他键（映射在数组中，两个是相邻的元素）
+
+-   将指向即将被删除的结点的链接保存为t
+-   将x 指向它的后继结点 min(t.right)
+-   将x 右链接（原本指向一棵所有结点都大于x.key的二叉树）指向deleteMin(t.right)，也就是在删除后所有结点仍大于x.key的子二叉查找树。
+-   将x的左链接（原本为空）设为t.left （其下所有的键都小于被删除的结点和它的后继结点）
+
+```java
+    public void delete(Key key){
+        delete(root, key);
+    }
+
+    private Node delete(Node x, Key key){
+        if (x == null) return null;
+        int cmp = key.compareTo(x.key);
+        if (cmp < 0)
+            x.left = delete(x.left, key);
+        else if (cmp > 0)
+            x.right = delete(x.right, key);
+        else{
+            if (x.right == null)
+                return x.left;
+            if (x.left == null)
+                return x.right;
+            Node t = x;
+            x = min(x.right);
+            x.right = deleteMin(t.right);
+            x.left = t.left;
+        }
+        x.n = size(x.left) + size(x.right) + 1;
+        return x;
+    }
+```
+
+## 遍历
+
+按顺序打印二叉查找树中所有的键
+
+```java
+private void print(Node x){
+    if (x == null) return;
+    print(x.left);
+    System.out.println(x.key);
+    print(x.right);
+}
+```
+
+将所有落在给定范围以内的键加入一个队列Queue。递归地查找根结点地左子树，然后查找根结点，然后递归地查找根结点地右子树。
+
+```java
+    public Iterable<Key> keys(){
+        return keys(min(),max());
+    }
+    
+    public Iterable<Key> keys(Key lo, Key hi){
+        Queue<Key> queue = new Queue<>();
+        keys(root, queue, lo ,hi);
+        return queue;
+    }
+    
+    private void keys(Node x, Queue<Key> queue, Key lo, Key hi){
+        if (x == null) return;
+        int cmpLo = lo.compareTo(x.key);
+        int cmpHi = hi.compareTo(x.key);
+        if (cmpLo < 0)
+            keys(x.left, queue, lo, hi);
+        //当前结点在lo和hi之中
+        if (cmpLo <= 0 && cmpHi >= 0)
+            queue.enqueue(x.key);
+        if (cmpHi > 0)
+            keys(x.right, queue, lo, hi);
+    }
+```
+
+迭代：
+
+```java
+   public Iterable<Key> keys() {
+        Stack<Node> stack = new Stack<Node>();
+        Queue<Key> queue = new Queue<Key>();
+        Node x = root;
+        while (x != null || !stack.isEmpty()) {
+            if (x != null) {
+                stack.push(x);
+                x = x.left;
+            }
+            else {
+                x = stack.pop();
+                queue.enqueue(x.key);
+                x = x.right;
+            }
+        }
+        return queue;
+    }
+
+```
+
+## 高度
+
+a 1-node tree has height 0
+
+```java
+    public int height() {
+        return height(root);
+    }
+    private int height(Node x) {
+        if (x == null) return -1;
+        return 1 + Math.max(height(x.left), height(x.right));
+    }
+```
+
+## 检查
+
+```java
+    // does this binary tree satisfy symmetric order?
+    // Note: this test also ensures that data structure is a binary tree since order is strict
+    private boolean isBST() {
+        return isBST(root, null, null);
+    }
+
+    // is the tree rooted at x a BST with all keys strictly between min and max
+    // (if min or max is null, treat as empty constraint)
+    // Credit: Bob Dondero's elegant solution
+    private boolean isBST(Node x, Key min, Key max) {
+        if (x == null) return true;
+        if (min != null && x.key.compareTo(min) <= 0) return false;
+        if (max != null && x.key.compareTo(max) >= 0) return false;
+        return isBST(x.left, min, x.key) && isBST(x.right, x.key, max);
+    } 
+
+    // are the size fields correct?
+    private boolean isSizeConsistent() { return isSizeConsistent(root); }
+    private boolean isSizeConsistent(Node x) {
+        if (x == null) return true;
+        if (x.size != size(x.left) + size(x.right) + 1) return false;
+        return isSizeConsistent(x.left) && isSizeConsistent(x.right);
+    } 
+
+    // check that ranks are consistent
+    private boolean isRankConsistent() {
+        for (int i = 0; i < size(); i++)
+            if (i != rank(select(i))) return false;
+        for (Key key : keys())
+            if (key.compareTo(select(rank(key))) != 0) return false;
+       
+```
+

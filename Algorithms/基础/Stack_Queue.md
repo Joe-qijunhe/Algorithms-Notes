@@ -14,8 +14,8 @@ import java.util.NoSuchElementException;
 
 public class ResizingArrayStack<Item> implements Iterable<Item>{
     private static final int INIT_CAPACITY = 8;
-    private Item[] a = (Item[]) new Object[8];
-    private int N = 0;
+    private Item[] a;
+    private int N;
 	
     public ResizingArrayStack() {
         a = (Item[]) new Object[INIT_CAPACITY];

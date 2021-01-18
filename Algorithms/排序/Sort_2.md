@@ -32,7 +32,7 @@ public class Merge {
             return;
         }
 
-        int mid = (hi + lo) / 2;
+        int mid = lo + (hi - lo) / 2;
         sort(a, lo, mid); //左边排序
         sort(a, mid + 1, hi); //右边排序
         merge(a, lo, mid, hi); //归并结果

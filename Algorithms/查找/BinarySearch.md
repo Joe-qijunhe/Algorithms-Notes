@@ -185,7 +185,7 @@ public class BinarySearchST<Key extends Comparable<Key>, Value> {
     public int rank(Key key) {
         int lo = 0, hi = n - 1;
         while (lo <= hi) {
-            int mid = (lo + hi) / 2;
+            int mid = lo + (hi - lo) / 2;
             int cmp = key.compareTo(keys[mid]);
             if (cmp < 0) hi = mid - 1;
             else if (cmp > 0) lo = mid + 1;
@@ -306,7 +306,7 @@ public static int binarySearch(int key, int[]a){
     int lo = 0;
     int hi = a.length - 1;
     while (lo <= hi){
-        int mid = (lo + hi)/2;
+        int mid = lo + (hi - lo) / 2;
         if (key < a[mid]){
             hi = mid -1;
         }
@@ -327,7 +327,7 @@ public static int binarySearch2(int key, int[] a, int lo, int hi){
     if (lo > hi){
         return -1;
     }
-    int mid = (lo + hi)/2;
+    int mid = lo + (hi - lo) / 2;
     if (key < a[mid]){
         return binarySearch2(key,a,lo,mid-1);
     }else if (key > a[mid]){
