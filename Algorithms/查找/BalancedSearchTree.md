@@ -79,3 +79,156 @@ private Node put(Node h, Key key, Value val) {
     return h;
 }
 ```
+
+# 2-3-4树
+
+## 插入
+
+2-3-4中允许存在4-结点。插入算法沿查找路径向下进行变换保证当前结点不是4-结点（这样树底只会遇到2-结点或3-结点，有地方插入），沿查找路径向上进行变换为了将之前创建的4-结点配平。
+
+-   将4-结点表示为由三个2-结点组成的一棵平衡的子树，根结点和两个子结点都用红链接相连
+-   在向下的过程中分解所有4-结点并进行颜色转换。如果根结点是4-结点，将他分成三个2结点，树高加一；如果遇到父结点为2结点的4结点，4-结点分解为两个2-结点并将中间键传递给它的父结点，父结点变成3-结点；如果遇到父结点为3-结点的4-结点，4-结点分解为两个2-结点并将中间键传递给它的父结点，父结点变成一个4结点。
+-   向上的过程中旋将4结点配平（4结点可以存在，所有允许一个结点同时连接到两条链接）
+
+## 删除
+
+删除最小键：
+
+从2-结点中删除一个键会留下一个空结点，替换成空链接会影响树的完美平衡性。为了保证我们不会删除一个2-结点，沿着左链接向下进行变换，确保当前结点不是2-结点。
+
+根结点有两种情况：
+
+1.  如果根是2-结点且它的两个子结点都是2-结点，直接将这三个结点变成4-结点
+2.  保证根结点的左子结点不是2-结点
+
+最后能得到一个含有最小键的3-结点或4-结点，然后将其删除。将3-结点变为2-结点，或者将4-结点变为3-结点，然后再往上分解临时4-结点
+
+```java
+    public void deleteMin() {
+        if (isEmpty()) throw new NoSuchElementException("BST underflow");
+
+        // if both children of root are black, set root to red
+        if (!isRed(root.left) && !isRed(root.right))
+            root.color = RED;
+
+        root = deleteMin(root);
+        if (!isEmpty()) root.color = BLACK;
+        // assert check();
+    }
+
+    private Node deleteMin(Node h) { 
+        if (h.left == null)
+            return null;
+
+        if (!isRed(h.left) && !isRed(h.left.left))
+            h = moveRedLeft(h);
+
+        h.left = deleteMin(h.left);
+        return balance(h);
+    }
+
+    private Node moveRedLeft(Node h) {
+        //假设结点h为红色，h.left和h.left都是黑色
+        //将h.left或h.left的子结点之一变红
+        flipColors(h);
+        if (isRed(h.right.left)) { 
+            h.right = rotateRight(h.right);
+            h = rotateLeft(h);
+            flipColors(h);
+        }
+        return h;
+    }
+
+    private void flipColors(Node h) {
+        h.color = !h.color;
+        h.left.color = !h.left.color;
+        h.right.color = !h.right.color;
+    }
+
+    private Node balance(Node h) {
+        if (isRed(h.right) && !isRed(h.left))    h = rotateLeft(h);
+        if (isRed(h.left) && isRed(h.left.left)) h = rotateRight(h);
+        if (isRed(h.left) && isRed(h.right))     flipColors(h);
+
+        h.size = size(h.left) + size(h.right) + 1;
+        return h;
+    }
+```
+
+```java
+    public void deleteMax() {
+        if (isEmpty()) throw new NoSuchElementException("BST underflow");
+
+        // if both children of root are black, set root to red
+        if (!isRed(root.left) && !isRed(root.right))
+            root.color = RED;
+
+        root = deleteMax(root);
+        if (!isEmpty()) root.color = BLACK;
+    }
+
+    private Node deleteMax(Node h) { 
+        if (isRed(h.left))
+            h = rotateRight(h);
+
+        if (h.right == null)
+            return null;
+
+        if (!isRed(h.right) && !isRed(h.right.left))
+            h = moveRedRight(h);
+
+        h.right = deleteMax(h.right);
+
+        return balance(h);
+    }    
+	
+	private Node moveRedRight(Node h) {
+        //假设结点h为红色，h.right和h.right.left都是黑色
+        //将h.right或h.right的子结点之一变红
+        flipColors(h);
+        if (isRed(h.left.left)) { 
+            h = rotateRight(h);
+            flipColors(h);
+        }
+        return h;
+    }
+```
+
+```java
+   public void delete(Key key) { 
+        if (key == null) throw new IllegalArgumentException("argument to delete() is null");
+        if (!contains(key)) return;
+
+        // if both children of root are black, set root to red
+        if (!isRed(root.left) && !isRed(root.right))
+            root.color = RED;
+
+        root = delete(root, key);
+        if (!isEmpty()) root.color = BLACK;
+    }
+
+    private Node delete(Node h, Key key) { 
+        if (key.compareTo(h.key) < 0)  {
+            if (!isRed(h.left) && !isRed(h.left.left))
+                h = moveRedLeft(h);
+            h.left = delete(h.left, key);
+        }
+        else {
+            if (isRed(h.left))
+                h = rotateRight(h);
+            if (key.compareTo(h.key) == 0 && (h.right == null))
+                return null;
+            if (!isRed(h.right) && !isRed(h.right.left))
+                h = moveRedRight(h);
+            if (key.compareTo(h.key) == 0) {
+                Node x = min(h.right);
+                h.key = x.key;
+                h.val = x.val;
+                h.right = deleteMin(h.right);
+            }
+            else h.right = delete(h.right, key);
+        }
+        return balance(h);
+    }
+```
+

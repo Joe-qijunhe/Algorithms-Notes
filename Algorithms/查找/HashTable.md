@@ -46,7 +46,7 @@ public class SeparateChainingHashST<Key,Value> {
 
     public SeparateChainingHashST(int m){
         this.m = m;
-        st = (SequentialSearchST<Key, Value>[]) new Object[m];
+        st = (SequentialSearchST<Key, Value>[]) new SequentialSearchST[m];
         for (int i = 0; i < m; i++) {
             st[i] = new SequentialSearchST<>();
         }
@@ -167,18 +167,6 @@ public class LinearProbingHashST<Key, Value> {
         return h & (m - 1);
     }
 
-    private void resize(int capacity) {
-        LinearProbingHashST<Key, Value> temp = new LinearProbingHashST<Key, Value>(capacity);
-        for (int i = 0; i < m; i++) {
-            if (keys[i] != null) {
-                temp.put(keys[i], vals[i]);
-            }
-        }
-        keys = temp.keys;
-        vals = temp.vals;
-        m = temp.m;
-    }
-
     public boolean contains(Key key) {
         if (key == null) throw new IllegalArgumentException("argument to contains() is null");
         return get(key) != null;
@@ -216,6 +204,8 @@ public class LinearProbingHashST<Key, Value> {
 
 ```
 
+## 删除
+
 删除键时，不能直接将键所在的位置设为null，因为这会使得在此位置之后的元素无法被查找。因此我们需要将簇中被删除键的右侧的所有键重新插入散列表。
 
 ```java
@@ -242,5 +232,23 @@ public void delete(Key key) {
     n--;
     
     if (n > 0 && n <= m / 8) resize(m / 2);
+}
+```
+
+## 调整数组大小
+
+创建一个新的给定大小的LinearProbingHashST（新建一个表是因为哈希值与表的大小有关，扩容后位置不一样，需要重新put），将原表中的所有键重新散列并插入到新表中，再更新原表的keys和vals
+
+```java
+private void resize(int capacity) {
+    LinearProbingHashST<Key, Value> temp = new LinearProbingHashST<Key, Value>(capacity);
+    for (int i = 0; i < m; i++) {
+        if (keys[i] != null) {
+            temp.put(keys[i], vals[i]);
+        }
+    }
+    keys = temp.keys;
+    vals = temp.vals;
+    m = temp.m;
 }
 ```
