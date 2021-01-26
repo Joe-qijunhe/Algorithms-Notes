@@ -114,6 +114,33 @@ public class Graph {
 
 ```
 
+添加一个复制构造函数
+
+```java
+    public Graph(Graph G) {
+        this.V = G.V();
+        this.E = G.E();
+        if (V < 0) throw new IllegalArgumentException("Number of vertices must be non-negative");
+
+        // update adjacency lists
+        adj = (Bag<Integer>[]) new Bag[V];
+        for (int v = 0; v < V; v++) {
+            adj[v] = new Bag<Integer>();
+        }
+
+        for (int v = 0; v < G.V(); v++) {
+            // reverse so that adjacency list is in same order as original
+            Stack<Integer> reverse = new Stack<Integer>();
+            for (int w : G.adj[v]) {
+                reverse.push(w);
+            }
+            for (int w : reverse) {
+                adj[v].add(w);
+            }
+        }
+    }
+```
+
 ## 深度优先搜索
 
 >   深度优先搜索标记与起点连通的所有顶点所需的时间和顶点的度数之和成正比
@@ -329,34 +356,134 @@ public class CC {
 
 ### 无环图判断
 
-dfs(Graph G, int v, int u) v代表当前结点，u代表上一个结点。进行深度优先搜索，走到一条线的最后一个结点时（意味着相邻的w都被mark过了（如果有没被mark过的点会继续dfs）），如果他相邻的结点只有上一个结点，那这条路线无环。但如果相邻的结点有其他的被mark过的点说明这条路线有环。
+dfs(Graph G, int u, int v) v代表当前结点，u代表上一个结点。进行深度优先搜索，走到一条线的最后一个结点时（意味着相邻的w都被mark过了（如果有没被mark过的点会继续dfs）），如果他相邻的结点只有上一个结点，那这条路线无环。但如果相邻的结点有其他的被mark过的点说明这条路线有环。
 
 ```java
 public class Cycle {
     private boolean[] marked;
-    private boolean hasCycle;
+    private int[] edgeTo;
+    private Stack<Integer> cycle;
 
+    /**
+     * Determines whether the undirected graph {@code G} has a cycle and,
+     * if so, finds such a cycle.
+     *
+     * @param G the undirected graph
+     */
     public Cycle(Graph G) {
+        if (hasSelfLoop(G)) return;
+        if (hasParallelEdges(G)) return;
         marked = new boolean[G.V()];
-        for (int s = 0; s < G.V(); s++) {
-            if (!marked[s]) {
-                dfs(G, s, s);
+        edgeTo = new int[G.V()];
+        for (int v = 0; v < G.V(); v++)
+            if (!marked[v])
+                dfs(G, -1, v);
+    }
+
+
+    // does this graph have a self loop?
+    // side effect: initialize cycle to be self loop
+    private boolean hasSelfLoop(Graph G) {
+        for (int v = 0; v < G.V(); v++) {
+            for (int w : G.adj(v)) {
+                if (v == w) {
+                    cycle = new Stack<Integer>();
+                    cycle.push(v);
+                    cycle.push(v);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    // does this graph have two parallel edges?
+    // side effect: initialize cycle to be two parallel edges
+    private boolean hasParallelEdges(Graph G) {
+        marked = new boolean[G.V()];
+
+        for (int v = 0; v < G.V(); v++) {
+
+            // check for parallel edges incident to v
+            for (int w : G.adj(v)) {
+                if (marked[w]) {
+                    cycle = new Stack<Integer>();
+                    cycle.push(v);
+                    cycle.push(w);
+                    cycle.push(v);
+                    return true;
+                }
+                marked[w] = true;
+            }
+
+            // reset so marked[v] = false for all v
+            for (int w : G.adj(v)) {
+                marked[w] = false;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns true if the graph {@code G} has a cycle.
+     *
+     * @return {@code true} if the graph has a cycle; {@code false} otherwise
+     */
+    public boolean hasCycle() {
+        return cycle != null;
+    }
+
+     /**
+     * Returns a cycle in the graph {@code G}.
+     * @return a cycle if the graph {@code G} has a cycle,
+     *         and {@code null} otherwise
+     */
+    public Iterable<Integer> cycle() {
+        return cycle;
+    }
+
+    private void dfs(Graph G, int u, int v) {
+        marked[v] = true;
+        for (int w : G.adj(v)) {
+
+            // short circuit if cycle already found
+            if (cycle != null) return;
+
+            if (!marked[w]) {
+                edgeTo[w] = v;
+                dfs(G, v, w);
+            }
+
+            // check for cycle (but disregard reverse of edge leading to v)
+            else if (w != u) {
+                cycle = new Stack<Integer>();
+                for (int x = v; x != w; x = edgeTo[x]) {
+                    cycle.push(x);
+                }
+                cycle.push(w);
+                cycle.push(v);
             }
         }
     }
 
-    private void dfs(Graph G, int v, int u) {
-        marked[v] = true;
-        for (int w : G.adj(v)) {
-            if (!marked[w])
-                dfs(G, w, v);
-            else if (w != u)
-                hasCycle = true;
+    /**
+     * Unit tests the {@code Cycle} data type.
+     *
+     * @param args the command-line arguments
+     */
+    public static void main(String[] args) {
+        In in = new In(args[0]);
+        Graph G = new Graph(in);
+        Cycle finder = new Cycle(G);
+        if (finder.hasCycle()) {
+            for (int v : finder.cycle()) {
+                StdOut.print(v + " ");
+            }
+            StdOut.println();
         }
-    }
-
-    public boolean hasCycle(){
-        return hasCycle;
+        else {
+            StdOut.println("Graph is acyclic");
+        }
     }
 }
 ```
@@ -403,7 +530,72 @@ public class TwoColor {
 
 ```
 
+## 桥判断
 
+条边被称为“桥”代表这条边一旦被删除，这张图的连通块数量会增加。
+
+low代表的是当前结点最早能到达的结点，dfs，更新low数组，判断能不能不经过父结点达到更早的结点
+
+```java
+public class Bridge {
+    private int bridges;      // number of bridges
+    private int cnt;          // counter
+    private int[] pre;        // pre[v] = order in which dfs examines v
+    private int[] low;        // low[v] = lowest preorder of any vertex connected to v
+
+    public Bridge(Graph G) {
+        low = new int[G.V()];
+        pre = new int[G.V()];
+        for (int v = 0; v < G.V(); v++)
+            low[v] = -1;
+        for (int v = 0; v < G.V(); v++)
+            pre[v] = -1;
+        
+        for (int v = 0; v < G.V(); v++)
+            if (pre[v] == -1)
+                dfs(G, v, v);
+    }
+
+    public int components() { return bridges + 1; }
+
+    private void dfs(Graph G, int u, int v) {
+        pre[v] = cnt++;
+        low[v] = pre[v];
+        for (int w : G.adj(v)) {
+            if (pre[w] == -1) {
+                dfs(G, v, w);
+                low[v] = Math.min(low[v], low[w]);
+                if (low[w] == pre[w]) {
+                    StdOut.println(v + "-" + w + " is a bridge");
+                    bridges++;
+                }
+            }
+
+            // update low number - ignore reverse of edge leading to v
+            else if (w != u)
+                low[v] = Math.min(low[v], pre[w]);
+        }
+    }
+
+    // test client
+    public static void main(String[] args) {
+        int V = Integer.parseInt(args[0]);
+        int E = Integer.parseInt(args[1]);
+        Graph G = GraphGenerator.simple(V, E);
+        StdOut.println(G);
+
+        Bridge bridge = new Bridge(G);
+        StdOut.println("Edge connected components = " + bridge.components());
+    }
+
+
+}
+```
+
+
+
+Copyright © 2000–2017, Robert Sedgewick and Kevin Wayne.
+Last updated: Fri Oct 20 12:50:46 EDT 2017.
 
 ## 广度优先搜索
 
