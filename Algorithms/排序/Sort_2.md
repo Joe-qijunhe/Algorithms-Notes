@@ -331,6 +331,8 @@ private static void sort(Comparable[] a, int lo, int hi) {
 
 有序数组：insert中将所有较大的元素向右边移动一格，使数组保持有序（类似插入排序）。删除就和栈的pop一样。
 
+泛型数组需要new Comparable，new Object会有cast Exception
+
 ```java
 public class OrderArrayMaxPQ<Key extends Comparable<Key>> {
     private Key[] pq;

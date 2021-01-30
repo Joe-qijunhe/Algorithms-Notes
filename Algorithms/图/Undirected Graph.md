@@ -592,11 +592,6 @@ public class Bridge {
 }
 ```
 
-
-
-Copyright © 2000–2017, Robert Sedgewick and Kevin Wayne.
-Last updated: Fri Oct 20 12:50:46 EDT 2017.
-
 ## 广度优先搜索
 
 解决单点最短路径：给定一幅图和一个起点s，回答“从s到给定目的的顶点v是否存在一条路径？如果有，找出最短的那条（含边数最少）”

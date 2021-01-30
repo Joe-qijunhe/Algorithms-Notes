@@ -131,6 +131,8 @@ public class DirectedCycle {
 
 ## 拓扑排序
 
+拓扑排序：给定一幅有向图，将所有的顶点排序，使得所有的有向边均从排在前面的元素指向排在后面的元素。
+
 >   当且仅当一幅有向图是无环图时它才能进行拓扑排序
 
 有向图中基于深度优先搜索的顶点排序的DepthFirstOrder：基本思想是深度优先搜索正好只访问每个顶点一次。如果将dfs的参数保存在一个数据结构中，遍历这个数据结构其实就能访问图中的所有顶点，遍历顺序取决于数据结构性质和保存顺序
@@ -190,6 +192,8 @@ public class DepthFirstOrder {
 }
 ```
 
+>   一幅有向无环图的拓扑顺序即为所有顶点的逆后续排列
+
 ```java
 public class Topological {
     private Iterable<Integer> order;    //顶点的拓扑排序
@@ -217,6 +221,94 @@ public class Topological {
         Topological top = new Topological(sg.G());
         for (int v : top.order()){
             System.out.println(sg.name(v));
+        }
+    }
+}
+```
+
+## 强连通性
+
+>   如果两个顶点v和w是互相可达的，则称他们为强连通。也就是说，既存在一条从v到w的有向路径，也存在一条从w到v的有向路径。如果一幅有向图中的任意两个顶点都是强连通的，则称这幅图是强连通的。
+
+两个顶点是强连通的当且仅当他们都在一个普通的有向环中。
+
+### Kosaraju算法
+
+-   在给定的一幅有向图G中，使用DepthFirstOrder来计算它的反向图$G^R$的逆后续排列
+-   给G中进行标准的深度优先搜索，但是要按照刚才计算得到的顺序而非标准的顺序来访问所有未被标记的顶点
+-   在构造函数中，所有在同一递归dfs()调用中被访问到的顶点都在同一个强连通分量中。
+
+>   构造函数调用的dfs(G,s)所达到的任意顶点v都必然是和s强连通的
+>
+>   证明：
+>
+>   设v为dfs(G,s)到达的某个顶点，那么G中存在s->v，需要证明v->s，也就是证明在$G^R$中有s->v。按照逆后序得出的顺序，s在v前，这意味着在反向图$G^R$中，dfs(v)在dfs(s)前结束，所以反向图中存在s->v
+
+根据拓扑排序定义，所有的有向边均从排在前面的元素指向排在后面的元素，反向图逆后序得出的顺序说明前面的元素到后面的元素在反向图中是有路径的。按照这个顺序在正向图中进行dfs搜索，如果正向图中也有路径，那么他们是强连通的。
+
+```java
+import Chapter1.Bag;
+
+public class KosarajuSCC {
+    private boolean[] marked;   //已访问过的顶点
+    private int[] id;   //强连通分量的标识符
+    private int count;
+
+    public KosarajuSCC(Digraph G) {
+        marked = new boolean[G.V()];
+        id = new int[G.V()];
+        DepthFirstOrder order = new DepthFirstOrder(G);
+        for (int s : order.reversePost()) {
+            if (!marked[s]) {
+                dfs(G, s);
+                count++;
+            }
+        }
+    }
+
+    private void dfs(Digraph G, int v) {
+        marked[v] = true;
+        id[v] = count;
+        for (int w : G.adj(v)) {
+            if (!marked[w]) {
+                dfs(G, w);
+            }
+        }
+    }
+
+    public boolean stronglyConnected(int v, int w) {
+        return id[v] == id[w];
+    }
+
+    public int id(int v) {
+        return id[v];
+    }
+
+    public int count() {
+        return count;
+    }
+
+    public static void main(String[] args) {
+        Digraph graph = new Digraph(5);
+        graph.addEdge(0,1);
+        graph.addEdge(1,2);
+        graph.addEdge(2,0);
+        graph.addEdge(3,4);
+        graph.addEdge(4,3);
+        KosarajuSCC cc = new KosarajuSCC(graph);
+        int M = cc.count();
+        System.out.println(M + " components");
+
+        Bag<Integer>[] components = (Bag<Integer>[]) new Bag[M];
+        for (int i = 0; i < M; i++)
+            components[i] = new Bag<>();
+        for (int v = 0; v < graph.V(); v++)
+            components[cc.id(v)].add(v);
+        for (int i = 0; i < M; i++) {
+            for (int v : components[i]) {
+                System.out.print(v + " ");
+            }
+            System.out.println();
         }
     }
 }
