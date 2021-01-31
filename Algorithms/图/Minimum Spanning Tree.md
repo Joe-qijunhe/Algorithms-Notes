@@ -128,6 +128,7 @@ import Chapter1.Queue;
 import Sort.MinPQ;
 
 public class LazyPrimMST {
+    private double weight;  //total weight of MST
     private boolean[] marked;   //最小生成树的顶点
     private Queue<Edge> mst;    //最小生成树的边
     private MinPQ<Edge> pq; //横切边
@@ -142,6 +143,7 @@ public class LazyPrimMST {
             int v = e.either(), w = e.other(v);
             if (marked[v] && marked[w]) continue;   //跳过失效的边
             mst.enqueue(e);
+            weight += e.weight();
             if (!marked[v]) visit(G, v);    //将顶点（v或w）添加到树种
             if (!marked[w]) visit(G, w);
         }
@@ -155,11 +157,16 @@ public class LazyPrimMST {
                 pq.insert(e);
         }
     }
+    
+    public double weight(){
+        return weight;
+    }
 
     public Iterable<Edge> edges(){
         return mst;
     }
 }
+
 ```
 
 ### 及时实现
@@ -171,6 +178,7 @@ PrimeST会从优先队列取出一个顶点v并检查它的邻接表中的每条
 索引优先队列：Key[]中index代表顶点 value代表该顶点到树的最小权重 ，pq根据权重进行排序，delMin()会（int min = pq[1]; keys[min] = null; return min; ）返回Key[]中的index（即返回下一个加入树的点）
 
 ```java
+import Chapter1.Queue;
 import Sort.IndexMinPQ;
 
 public class PrimeMST {
@@ -208,8 +216,25 @@ public class PrimeMST {
             }
         }
     }
-}
 
+    public Iterable<Edge> edges() {
+        Queue<Edge> mst = new Queue<Edge>();
+        for (int v = 0; v < edgeTo.length; v++) {
+            Edge e = edgeTo[v];
+            if (e != null) {
+                mst.enqueue(e);
+            }
+        }
+        return mst;
+    }
+
+    public double weight() {
+        double weight = 0.0;
+        for (Edge e : edges())
+            weight += e.weight();
+        return weight;
+    }
+}
 ```
 
 ## Kruskal算法
@@ -225,6 +250,7 @@ import Sort.MinPQ;
 
 public class KruskalMST {
     private Queue<Edge> mst;
+    private double weight;
 
     public KruskalMST(EdgeWeightedGraph G){
         mst = new Queue<>();
@@ -239,11 +265,16 @@ public class KruskalMST {
             if (uf.connected(v,w))  continue;   //忽略失效的边
             uf.union(v,w);  //合并分量
             mst.enqueue(e); //将边添加到最小生成树
+            weight += e.weight();
         }
     }
 
     public Iterable<Edge> edges(){
         return mst;
+    }
+    
+    public double weight(){
+        return weight;
     }
 }
 ```
