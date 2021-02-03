@@ -84,8 +84,261 @@ public class EdgeWeightedDigraph {
 }
 ```
 
+>   最短路径的最优性条件：
+>
+>   令G为一幅加权有向图，顶点s是G中的起点，distTo[]是一个由顶点索引的数组，保存的是G中路径的长度。对于从s可达的所有顶点v，distTo[v]的值是从s到v的某条路径长度，对于从s不可达的所有顶点v，该值为无穷大。当且仅当对于从v到w的任意一条边e，这些值都满足distTo[w]<=distTo[v]+e.weight()时（不存在有效边时），它们是最短路径的长度。
+
+>   通用最短路径算法：
+>
+>   将distTo[s]初始化为0，其他distTo[]元素初始化无穷大，继续如下操作：
+>
+>   放松G中的任意边，直到不存在有效边为止
+>
+>   对于任意从s可达的顶点w，在进行这些操作之后，distTo[w]的值即为从s到w的最短路径的长度（且edgeTo[w]的值即为该路径上的最后一条边）
+
 ## Dijkstra算法
 
-遍历临边时，不用像最小生成树那样检查是否经过那点。最小生成树需要检查是因为不能生成环，而最短路径需要放松边。
+>   只适用于正（或零）权重的边
 
-Prime里的distTo是最近的一条边的权重，Dijkstra里是起到到这的累计起来的权重
+relax遍历临边时，不用像最小生成树那样检查是否经过那点。最小生成树需要检查是因为不能生成环，而最短路径需要放松边。
+
+Prime里的distTo是最近的一条边的权重，Dijkstra里是从起点到这的累计起来的权重
+
+Prime算法每次添加的都是离树最近的非树顶点，Dijkstra算法每次添加的都是离起点最近的非树顶点。
+
+```java
+import Chapter1.Stack;
+import MinimumSpanningTree.Edge;
+import Sort.IndexMinPQ;
+
+public class DijkstraSP {
+    private DirectedEdge[] edgeTo;
+    private double[] distTo;
+    private IndexMinPQ<Double> pq;
+
+    public DijkstraSP(EdgeWeightedDigraph G, int s) {
+        edgeTo = new DirectedEdge[G.V()];
+        distTo = new double[G.V()];
+        pq = new IndexMinPQ<>(G.V());
+        for (int v = 0; v < G.V(); v++)
+            distTo[v] = Double.POSITIVE_INFINITY;
+        distTo[s] = 0.0;
+        pq.insert(s, 0.0);
+        while (!pq.isEmpty())
+            relax(G, pq.delMin());
+    }
+
+    public void relax(EdgeWeightedDigraph G, int v) {
+        for (DirectedEdge e : G.adj(v)) {
+            int w = e.to();
+            if (distTo[w] > distTo[v] + e.weight()) {
+                distTo[w] = distTo[v] + e.weight();
+                edgeTo[w] = e;
+                if (pq.contains(w)) pq.changeKey(w, distTo[w]);
+                else pq.insert(w, distTo[w]);
+            }
+        }
+    }
+
+    public double distTo(int v) {
+        return distTo[v];
+    }
+
+    public boolean hasPathTo(int v) {
+        return distTo[v] < Double.POSITIVE_INFINITY;
+    }
+
+    public Iterable<DirectedEdge> pathTo(int v) {
+        if (!hasPathTo(v)) return null;
+        Stack<DirectedEdge> path = new Stack<>();
+        for (DirectedEdge e = edgeTo[v]; e != null; e = edgeTo[e.from()])
+            path.push(e);
+        return path;
+    }
+
+    public static void main(String[] args) {
+        EdgeWeightedDigraph G = new EdgeWeightedDigraph(8);
+        G.addEdge(new DirectedEdge(4, 5, 0.35));
+        G.addEdge(new DirectedEdge(5, 4, 0.35));
+        G.addEdge(new DirectedEdge(4, 7, 0.37));
+        G.addEdge(new DirectedEdge(5, 7, 0.28));
+        G.addEdge(new DirectedEdge(7, 5, 0.28));
+        G.addEdge(new DirectedEdge(5, 1, 0.32));
+        G.addEdge(new DirectedEdge(0, 4, 0.38));
+        G.addEdge(new DirectedEdge(0, 2, 0.26));
+        G.addEdge(new DirectedEdge(7, 3, 0.39));
+        G.addEdge(new DirectedEdge(1, 3, 0.29));
+        G.addEdge(new DirectedEdge(2, 7, 0.34));
+        G.addEdge(new DirectedEdge(6, 2, 0.40));
+        G.addEdge(new DirectedEdge(3, 6, 0.52));
+        G.addEdge(new DirectedEdge(6, 0, 0.58));
+        G.addEdge(new DirectedEdge(6, 4, 0.93));
+        DijkstraSP sp = new DijkstraSP(G, 0);
+        for (int t = 0; t < G.V(); t++) {
+            System.out.print(0 + " to "+ t);
+            System.out.printf(" (%4.2f) ", sp.distTo(t));
+            if (sp.hasPathTo(t)) {
+                for (DirectedEdge e : sp.pathTo(t))
+                    System.out.print(e + " ");
+            }
+            System.out.println();
+        }
+    }
+}
+```
+
+## 无环加权有向图中的最短路径
+
+-   能够在线性时间内解决单点最短路径问题
+-   能够处理负权重的边
+-   能够解决相关的问题，例如找出最长的路径
+
+将distTo[s]初始化为0，其他distTo[]元素初始化无穷大，然后一个一个地按照拓扑顺序放松所有顶点。
+
+拓扑顺序能让所有的有向边均从排在前面的元素指向排在后面的元素，而每次顶点地松弛操作都能得出到达某个顶点的更短的路径。就是说每条边v->w只会被放松一次，放松时得到distTo[w] <= distTo[v] + e.weight()，在结束前这个不等式都成立，因为distTo[v]时不会变化的（在处理完v后算法不会处理任何指向v的边）而distTo[w]只会变小。
+
+```java
+package ShortestPaths;
+
+import Chapter1.Stack;
+import DirectedGraph.Topological;
+
+public class AcyclicSP {
+    private DirectedEdge[] edgeTo;
+    private double[] distTo;
+
+    public AcyclicSP(EdgeWeightedDigraph G, int s){
+        edgeTo = new DirectedEdge[G.V()];
+        distTo = new double[G.V()];
+
+        for (int v =0; v < G.V();v++)
+            distTo[v] = Double.POSITIVE_INFINITY;
+        distTo[s] = 0.0;
+        Topological top = new Topological(G);
+        for (int v : top.order())
+            relax(G, v);
+
+    }
+
+    public void relax(EdgeWeightedDigraph G, int v) {
+        for (DirectedEdge e : G.adj(v)) {
+            int w = e.to();
+            if (distTo[w] > distTo[v] + e.weight()) {
+                distTo[w] = distTo[v] + e.weight();
+                edgeTo[w] = e;
+            }
+        }
+    }
+
+    public double distTo(int v) {
+        return distTo[v];
+    }
+
+    public boolean hasPathTo(int v) {
+        return distTo[v] < Double.POSITIVE_INFINITY;
+    }
+
+    public Iterable<DirectedEdge> pathTo(int v) {
+        if (!hasPathTo(v)) return null;
+        Stack<DirectedEdge> path = new Stack<DirectedEdge>();
+        for (DirectedEdge e = edgeTo[v]; e != null; e = edgeTo[e.from()]) {
+            path.push(e);
+        }
+        return path;
+    }
+} 
+```
+
+最长路径：将distTo[]的初始值变为Double.NEGATIVE_INFINITY并改变relax()方法中的不等式方向。
+
+## 一般加权有向图中的最短路径
+
+在只存在正权重的边时，我们的重点在于寻找近路；但在存在负权重时，我们可能会为了经过负权重的边而绕弯
+
+>   加权有向图中的负权重环是一个总权重（环上的所有边的权重之和）为负的有向环。
+
+>   当且仅当加权有向图中至少存在一条从s到v的有向路径且所有从s到v的有向路径上的任意顶点都不存在于任何负权重环中时，s到v的最短路径才是存在的。
+
+### Bellman-Ford算法
+
+将distTo[s]初始化为0，其他的distTo[]元素初始化为无穷大。以任意顺序放松有向图的所有边，重复V轮。
+
+基于两种数据结构：
+
+-   有一条用来保存即将被放松的顶点的队列queue。因为只有上一轮中的distTo[]值发生变化的顶点指出的边才能够改变其他distTo[]元素的值，这样的点都记录在队列里。
+-   一个由顶点索引的boolean数组onQ[]，用来指示顶点是否已经存在于队列中，以防止将顶点重复插入队列
+
+保证了：
+
+-   队列中不出现重复的顶点
+-   在某一轮中，改变了edgeto[]和distTo[]的值的所有顶点都会在下一轮中处理
+
+```java
+package ShortestPaths;
+
+import Chapter1.Queue;
+import DirectedGraph.EdgeWeightedDirectedCycle;
+import MinimumSpanningTree.Edge;
+
+public class BellmanFordSP {
+    private double[] distTo;    //从起点到某个顶点的路径长度
+    private DirectedEdge[] edgeTo;  //从起点到某个顶点的最后一条边
+    private boolean[] onQ;  //该顶点是否存在于队列中
+    private Queue<Integer> queue;   //正在被放松的顶点
+    private int cost;   //relax()的调用次数
+    private Iterable<DirectedEdge> cycle;   //edgeTo[]中是否有负权重环
+
+    public BellmanFordSP(EdgeWeightedDigraph G, int s) {
+        distTo = new double[G.V()];
+        edgeTo = new DirectedEdge[G.V()];
+        onQ = new boolean[G.V()];
+        queue = new Queue<>();
+        for (int v = 0; v < G.V(); v++)
+            distTo[v] = Double.POSITIVE_INFINITY;
+        distTo[s] = 0.0;
+        queue.enqueue(s);
+        onQ[s] = true;
+        while (!queue.isEmpty() && !hasNegativeCycle()) {
+            int v = queue.dequeue();
+            onQ[v] = false;
+            relax(G, v);
+        }
+    }
+
+    public void relax(EdgeWeightedDigraph G, int v) {
+        for (DirectedEdge e : G.edges()) {
+            int w = e.to();
+            if (distTo[w] > distTo[v] + e.weight()) {
+                distTo[w] = distTo[v] + e.weight();
+                edgeTo[w] = e;
+                if (!onQ[w]) {
+                    queue.enqueue(w);
+                    onQ[w] = true;
+                }
+            }
+            if (cost++ % G.V() == 0)
+                findNegativeCycle();
+        }
+    }
+
+    private void findNegativeCycle() {
+        int V = edgeTo.length;
+        EdgeWeightedDigraph spt = new EdgeWeightedDigraph(V);
+        for (int v = 0; v < V; v++) {
+            if (edgeTo[v] != null)
+                spt.addEdge(edgeTo[v]);
+        }
+        EdgeWeightedDirectedCycle finder = new EdgeWeightedDirectedCycle(spt);
+        cycle = finder.cycle();
+    }
+
+    public boolean hasNegativeCycle() {
+        return cycle != null;
+    }
+
+    public Iterable<DirectedEdge> negativeCycle() {
+        return cycle;
+    }
+}
+```
+
