@@ -522,6 +522,16 @@ public class MaxPQ<Key extends Comparable<Key>> {
 
 ```
 
+最小堆只需要把less函数变成greater函数
+
+```java
+    private boolean greater(int i, int j) {
+        return pq[i].compareTo(pq[j]) > 0;
+    }
+```
+
+
+
 ## 堆排序
 
 ## 原理

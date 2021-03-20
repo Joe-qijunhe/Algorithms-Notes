@@ -561,6 +561,8 @@ public Stack(Stack<Item> s) {
 
 ## 动态数组
 
+last is index of next available slot (也等效于(first+n)%capacity). 因为添加第一个元素时，如果last是队列最后一个元素的索引，就要q[++last] = item, last会变成1，first还是0（所以需要判断是不是第一个元素，是的话用q[last] = item），last is index of next available slot就不用判断。
+
 ```java
 import java.util.Iterator;
 import java.util.NoSuchElementException;
