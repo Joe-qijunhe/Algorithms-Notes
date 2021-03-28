@@ -154,3 +154,50 @@ public class BinaryTree<Value> {
     }
 ```
 
+## 深度
+
+Depth of a node: number of ancestors not including itself
+
+```java
+public int depth(Key target) {
+    return depth(root, target, 0);
+}
+
+public int depth(Node x, Key target, int level) {
+    if (x == null)
+        return -1;
+    if (x.key.equals(target))
+        return level;
+    int result = depth(x.left, target, level + 1);
+    if (result != -1)
+        return result;
+    result = depth(x.right, target, level + 1);
+    return result;
+}
+```
+
+## 高度
+
+a 1-node tree has height 0
+
+Height of a tree: maximum depth
+
+```java
+public int height() {
+    return height(root);
+}
+private int height(Node x) {
+    if (x == null) return -1;
+    return 1 + Math.max(height(x.left), height(x.right));
+}
+```
+## 大小
+
+```java
+public int size(Node x) {
+    if (x == null) {
+        return 0;
+    }
+    return size(x.left) + size(x.right) + 1;
+}
+```

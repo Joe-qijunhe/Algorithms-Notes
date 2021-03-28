@@ -97,7 +97,7 @@ public class BST<Key extends Comparable<Key>, Value> {
     private Node put(Node x, Key key, Value val){
         //如果key存在于以x为结点的子树中，则更新它的值
         //否则，将以key和val为键值对的新结点插入到该子树
-        if (x == null) return new Node(key, val,1);
+        if (x == null) return new Node(key, val, 1);
         int cmp = key.compareTo(x.key);
         if (cmp < 0 )
             x.left = put(x.left, key, val);
@@ -308,7 +308,36 @@ public class BST<Key extends Comparable<Key>, Value> {
     }
 ```
 
-如果要删除一个拥有两个子结点的结点，删除之后要处理两棵子数，但被删除结点的父结点只有一条空出来的链接。
+删除情况一：被删除的结点只有一个子结点
+
+删除4。左子结点为空，直接返回右子节点。
+
+```mermaid
+graph TD;
+    6-->2;
+    6-->9;
+    2-->1;
+    2-->4;
+    9-->8;
+    9-->None;
+   	4-->NULL;
+    4-->5;
+```
+
+```mermaid
+graph TD;
+    6-->2;
+    6-->9;
+    2-->1;
+    2-->5;
+    9-->8;
+    9-->None;
+   	
+```
+
+
+
+删除情况二：被删除的结点有两个结点。删除之后要处理两棵子数，但被删除结点的父结点只有一条空出来的链接。
 
 T.Hibbard 法：在删除结点x后用它的后继结点填补。因为x有一个右子结点，因此它的后继结点就是其右子数中最小结点。这样的替换依然能保证树的有序性，因为x.key和后继结点的键之间不存在其他键（映射在数组中，两个是相邻的元素）
 
@@ -405,6 +434,39 @@ private void print(Node x){
         return queue;
     }
 
+```
+
+方法二：
+
+A range query is defined by two values k1 and k2. We are to find all keys k stored in T such that k1 ≤ k ≤ k2
+
+The algorithm is a restricted version of in-order traversal. When at node v:
+
+-   if key(v) < k1: Recursively search right subtree
+-   if k1 ≤ key(v) ≤ k2: Recursively search left subtree, add v to range output, search right subtree
+-   if k2 < key(v): Recursively search left subtree
+
+```java
+public Iterable<Key> range(Key lo, Key hi) {
+    Queue<Key> queue = new Queue<>();
+    range(root, queue, lo, hi);
+    return queue;
+}
+
+private void range(Node x, Queue<Key> queue, Key lo, Key hi) {
+    if (x == null) return;
+    int cmpLo = lo.compareTo(x.key);
+    int cmpHi = hi.compareTo(x.key);
+    if (cmpHi < 0)
+        range(x.left, queue, lo, hi);
+    else if (cmpLo > 0)
+        range(x.right, queue, lo, hi);
+    else {
+        range(x.left, queue, lo, hi);
+        queue.enqueue(x.key);
+        range(x.right, queue, lo, hi);
+    }
+}
 ```
 
 ## 高度

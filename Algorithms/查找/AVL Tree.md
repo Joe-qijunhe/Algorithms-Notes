@@ -7,16 +7,16 @@
 旋转分为四种情况：
 
 1.  LL：LeftLeft，也称为”左左”。插入或删除一个节点后，根节点的左子树的左子树还有非空子节点，导致”根的左子树的高度”比”根的右子树的高度”大2，导致AVL树失去了平衡。
-    ![image-20210320164411839](C:\Users\ASUS\AppData\Roaming\Typora\typora-user-images\image-20210320164411839.png)
+    ![image-20210320164411839](E:\project\Blog\Notes\Algorithms\src\ll.png)
 
 2.  LR：LeftRight，也称为”左右”。插入或删除一个节点后，根节点的左子树的右子树还有非空子节点，导致”根的左子树的高度”比”根的右子树的高度”大2，导致AVL树失去了平衡。（k1还是平衡的，k3检测到不平衡时，如果只用左旋或者右旋是解决不了问题的，因为会把k2挂到k3的左边，还是不平衡。所以需要旋转两次）
-    ![image-20210320164448217](C:\Users\ASUS\AppData\Roaming\Typora\typora-user-images\image-20210320164448217.png)
+    ![image-20210320164448217](E:\project\Blog\Notes\Algorithms\src\lr.png)
 
 3.  RL：RightLeft，称为”右左”。插入或删除一个节点后，根节点的右子树的左子树还有非空子节点，导致”根的右子树的高度”比”根的左子树的高度”大2，导致AVL树失去了平衡。
-    ![image-20210320164520236](C:\Users\ASUS\AppData\Roaming\Typora\typora-user-images\image-20210320164520236.png)
+    ![image-20210320164520236](E:\project\Blog\Notes\Algorithms\src\rl.png)
 
 4.  RR：RightRight，称为”右右”。插入或删除一个节点后，根节点的右子树的右子树还有非空子节点，导致”根的右子树的高度”比”根的左子树的高度”大2，导致AVL树失去了平衡。
-    ![image-20210320164548129](C:\Users\ASUS\AppData\Roaming\Typora\typora-user-images\image-20210320164548129.png)
+    ![image-20210320164548129](E:\project\Blog\Notes\Algorithms\src\rr.png)
 
 ```java
 package SearchTree;
