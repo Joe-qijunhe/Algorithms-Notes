@@ -177,6 +177,13 @@ public class BST<Key extends Comparable<Key>, Value> {
     }
 ```
 
+### 倒数第二大的键
+
+先找到树中最大的键w，两种情况：
+
+-   如果w有左子树，那么倒数第二大的键就在这左子树中，在左子树中找到最大结点并返回。（因为w的左子树中的结点肯定比w的父结点大）
+-   如果w没有左子树，倒数第二大的键是它的父结点。
+
 ## 向上取整和向下取整
 
 向下取整：
@@ -278,7 +285,7 @@ public class BST<Key extends Comparable<Key>, Value> {
 
 ## 删除
 
-删除最小键：
+### 删除最小键
 
 不断深入根结点的左子树中直至遇见一个空链接，然后将指向改结点的链接指向该结点的右子树，并更新它到根结点的路径上的所有结点的计数器
 
@@ -307,6 +314,8 @@ public class BST<Key extends Comparable<Key>, Value> {
         return x;
     }
 ```
+
+### 删除任意结点
 
 删除情况一：被删除的结点只有一个子结点
 
@@ -485,6 +494,29 @@ a 1-node tree has height 0
 
 ## 检查
 
+只检查每个结点的左子结点小于当前结点，右子结点大于当前结点是不行的。
+
+```
+def test-bst(T)
+	for u in T do
+		if u.left ̸= nil and u.key < u.left.key then
+			return False
+		if u.right ̸= nil and u.key > u.right.key then
+			return False
+	return True
+```
+
+会出现这种情况：
+
+```mermaid
+graph TD
+	3-->1;
+	3-->4;
+	4-->2;
+```
+
+正确的检查BST方式：对于每个BST的结点来说，keys(左子树) < key(node) < keys(右子树)，所以左子树的最大值是当前结点，右子树的最小值是当前结点。
+
 ```java
     // does this binary tree satisfy symmetric order?
     // Note: this test also ensures that data structure is a binary tree since order is strict
@@ -494,14 +526,15 @@ a 1-node tree has height 0
 
     // is the tree rooted at x a BST with all keys strictly between min and max
     // (if min or max is null, treat as empty constraint)
-    // Credit: Bob Dondero's elegant solution
     private boolean isBST(Node x, Key min, Key max) {
         if (x == null) return true;
         if (min != null && x.key.compareTo(min) <= 0) return false;
         if (max != null && x.key.compareTo(max) >= 0) return false;
         return isBST(x.left, min, x.key) && isBST(x.right, x.key, max);
-    } 
+    }        
+```
 
+```java
     // are the size fields correct?
     private boolean isSizeConsistent() { return isSizeConsistent(root); }
     private boolean isSizeConsistent(Node x) {
@@ -516,6 +549,5 @@ a 1-node tree has height 0
             if (i != rank(select(i))) return false;
         for (Key key : keys())
             if (key.compareTo(select(rank(key))) != 0) return false;
-       
 ```
 
