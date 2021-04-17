@@ -204,6 +204,8 @@ public class LinearProbingHashST<Key, Value> {
 
 ```
 
+在这个实现中，由于在put时会resize数组，所以数组是永远不会满的。如果是个定长的数组（没有resize方法），get时需要维护个变量p，代表已经找过几个元素，当p==n时，停止寻找，返回null（没有这个变量的话，在数组满的时候，找一个不存在的key会陷入死循环）
+
 ## 删除
 
 删除键时，不能直接将键所在的位置设为null，因为这会使得在此位置之后的元素无法被查找。因此我们需要将簇中被删除键的右侧的所有键重新插入散列表。
@@ -252,3 +254,21 @@ private void resize(int capacity) {
     m = temp.m;
 }
 ```
+
+## DEFUNCT法
+
+Introduce a special object called DEFUNCT, which replaces deleted elements
+
+get(k): must pass over cells with DEFUNCT and keep probing until the element is found, or until reaching an empty cell
+
+put(k,o): search for the entry as in get(k), but we also remember the index j of the first cell we find that has DEFUNCT or empty. If we find key k, we replace the value there with o and return the previous value. If we don’t find k, we store (k, o) in cell with index j. Throw exception if table is full.
+
+remove(k): search for the entry as in get(k). If found, replace it with the special item DEFUNCT and return element o
+
+# 布谷鸟哈希
+
+1.  当两个哈希任意位置为空，则选择一个位置插入
+
+2.  当两个哈希有位置为空时，则插入到空位置
+
+3.  当两个哈希位置均不为空时，随机选择两者之一的位置上key 踢出，计算踢出的key 另一个哈希值对应的位置进行插入，转至2执行（即当再次插入位置为空时插入，仍旧不为空时，再踢出这个key）

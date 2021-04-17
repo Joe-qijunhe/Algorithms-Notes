@@ -4,155 +4,280 @@
 
 平衡二叉树（平衡二叉查找树/AVL树）。它是一棵空树或它的左右两个子树的高度差绝对值不超过1，左右两个子树都是一棵平衡二叉树。常用的实现有红黑树，AVL，替罪羊树等
 
-旋转分为四种情况：
-
-1.  LL：LeftLeft，也称为”左左”。插入或删除一个节点后，根节点的左子树的左子树还有非空子节点，导致”根的左子树的高度”比”根的右子树的高度”大2，导致AVL树失去了平衡。
-    ![image-20210320164411839](E:\project\Blog\Notes\Algorithms\src\ll.png)
-
-2.  LR：LeftRight，也称为”左右”。插入或删除一个节点后，根节点的左子树的右子树还有非空子节点，导致”根的左子树的高度”比”根的右子树的高度”大2，导致AVL树失去了平衡。（k1还是平衡的，k3检测到不平衡时，如果只用左旋或者右旋是解决不了问题的，因为会把k2挂到k3的左边，还是不平衡。所以需要旋转两次）
-    ![image-20210320164448217](E:\project\Blog\Notes\Algorithms\src\lr.png)
-
-3.  RL：RightLeft，称为”右左”。插入或删除一个节点后，根节点的右子树的左子树还有非空子节点，导致”根的右子树的高度”比”根的左子树的高度”大2，导致AVL树失去了平衡。
-    ![image-20210320164520236](E:\project\Blog\Notes\Algorithms\src\rl.png)
-
-4.  RR：RightRight，称为”右右”。插入或删除一个节点后，根节点的右子树的右子树还有非空子节点，导致”根的右子树的高度”比”根的左子树的高度”大2，导致AVL树失去了平衡。
-    ![image-20210320164548129](E:\project\Blog\Notes\Algorithms\src\rr.png)
-
 ```java
-package SearchTree;
+// AVL树的节点(内部类)
+class AVLTreeNode<T extends Comparable<T>> {
+    T key;                // 关键字(键值)
+    int height;         // 高度
+    AVLTreeNode<T> left;    // 左孩子
+    AVLTreeNode<T> right;    // 右孩子
 
-public class AVL<T extends Comparable<T>> {
-    private static final int MAX_HEIGHT_DIFFERENCE = 1;
-    private Node root;
-
-    private class Node {
-        T key;
-        int height;
-        Node left;
-        Node right;
-
-        public Node(T key, Node left, Node right) {
-            this.key = key;
-            this.left = left;
-            this.right = right;
-            this.height = 0;
-        }
-    }
-
-    public int height() {
-        return height(root);
-    }
-
-    private int height(Node node) {
-        if (node != null)
-            return node.height;
-
-        return 0;
-    }
-
-    public void insert(T key) {
-        if (key == null) {
-            throw new NullPointerException();
-        }
-        root = insert(root, key);
-    }
-
-    private Node insert(Node node, T key) {
-        if (node == null) {
-            return new Node(key, null, null);
-        }
-
-        int cmp = key.compareTo(node.key);
-        if (cmp == 0) {
-            return node;
-        }
-        if (cmp < 0) {
-            node.left = insert(node.left, key);
-        } else {
-            node.right = insert(node.right, key);
-        }
-
-        if (Math.abs(height(node.left) - height(node.right)) > MAX_HEIGHT_DIFFERENCE) {
-            node = balance(node);
-        }
-        node.height = Math.max(height(node.left), height(node.right)) + 1;
-        return node;
-    }
-
-
-    private Node balance(Node node) {
-        Node node1, node2;
-        if (height(node.left) > height(node.right)) {
-            // ll
-            if (height(node.left.left) > height(node.left.right)) {
-                node1 = node.left;
-                node.left = node1.right;
-                node1.right = node;
-
-                node.height = Math.max(height(node.left), height(node.right)) + 1;
-                node1.height = Math.max(height(node1.left), height(node1.right)) + 1;
-                return node1;
-            }
-            // lr
-            if (height(node.left.right) > height(node.left.left)) {
-                node1 = node.left;
-                node2 = node.left.right;
-                node.left = node2.right;
-                node1.right = node2.left;
-                node2.left = node1;
-                node2.right = node;
-
-                node.height = Math.max(height(node.left), height(node.right)) + 1;
-                node1.height = Math.max(height(node1.left), height(node1.right)) + 1;
-                node2.height = Math.max(height(node2.left), height(node2.right)) + 1;
-                return node2;
-            }
-        }
-
-        if (height(node.right) > height(node.left)) {
-            // rr
-            if (height(node.right.right) > height(node.right.left)) {
-                node1 = node.right;
-                node.right = node1.left;
-                node1.left = node;
-
-                node.height = Math.max(height(node.left), height(node.right)) + 1;
-                node1.height = Math.max(height(node1.right), node.height) + 1;
-                return node1;
-            }
-
-            // rl
-            if (height(node.right.left) > height(node.right.right)) {
-                node1 = node.right;
-                node2 = node.right.left;
-                node.right = node2.left;
-                node1.left = node2.right;
-                node2.left = node;
-                node2.right = node1;
-
-                node.height = Math.max(height(node.left), height(node.right)) + 1;
-                node1.height = Math.max(height(node1.left), height(node1.right)) + 1;
-                node2.height = Math.max(height(node2.left), height(node2.right)) + 1;
-                return node2;
-            }
-        }
-        return node;
-    }
-
-    public void preOrder(Node node) {
-        System.out.println(node.key);
-        if (node.left != null) {
-            preOrder(node.left);
-        }
-        if (node.right != null) {
-            preOrder(node.right);
-        }
+    public AVLTreeNode(T key, AVLTreeNode<T> left, AVLTreeNode<T> right) {
+        this.key = key;
+        this.left = left;
+        this.right = right;
+        this.height = 0;
     }
 }
 
+// 构造函数
+public AVLTree() {
+    mRoot = null;
+}
+
+/*
+ * 获取树的高度
+ */
+private int height(AVLTreeNode<T> tree) {
+    if (tree != null)
+        return tree.height;
+
+    return 0;
+}
+
+public int height() {
+    return height(mRoot);
+}
+
+private int max(int a, int b) {
+    return a>b ? a : b;
+}
+
+private AVLTreeNode<T> minimum(AVLTreeNode<T> tree) {
+    if (tree == null)
+        return null;
+
+    while(tree.left != null)
+        tree = tree.left;
+    return tree;
+}
+
+public T minimum() {
+    AVLTreeNode<T> p = minimum(mRoot);
+    if (p != null)
+        return p.key;
+
+    return null;
+}
+
+private AVLTreeNode<T> maximum(AVLTreeNode<T> tree) {
+    if (tree == null)
+        return null;
+
+    while(tree.right != null)
+        tree = tree.right;
+    return tree;
+}
+
+public T maximum() {
+    AVLTreeNode<T> p = maximum(mRoot);
+    if (p != null)
+        return p.key;
+
+    return null;
+}
 ```
 
-删除就是在原来查找二叉树的基础上，每一次删除都调用balance方法平衡AVL树
+## 旋转
+
+旋转分为四种情况：
+
+LL：LeftLeft，也称为”左左”。插入或删除一个节点后，根节点的左子树的左子树还有非空子节点，导致”根的左子树的高度”比”根的右子树的高度”大2，导致AVL树失去了平衡。
+
+
+
+![image-20210320164411839](E:\project\Blog\Notes\Algorithms\src\ll.png)
+
+```java
+private AVLTreeNode<T> leftLeftRotation(AVLTreeNode<T> k2) {
+    AVLTreeNode<T> k1;
+
+    k1 = k2.left;
+    k2.left = k1.right;
+    k1.right = k2;
+
+    k2.height = max( height(k2.left), height(k2.right)) + 1;
+    k1.height = max( height(k1.left), k2.height) + 1;
+
+    return k1;
+}
+```
+
+LR：LeftRight，也称为”左右”。插入或删除一个节点后，根节点的左子树的右子树还有非空子节点，导致”根的左子树的高度”比”根的右子树的高度”大2，导致AVL树失去了平衡。（k1还是平衡的，k3检测到不平衡时，如果只用左旋或者右旋是解决不了问题的，因为会把k2挂到k3的左边，还是不平衡。所以需要旋转两次）
+
+![image-20210320164448217](E:\project\Blog\Notes\Algorithms\src\lr.png)
+
+```java
+/*
+ * LR：左右对应的情况(左双旋转)。
+ */
+private AVLTreeNode<T> leftRightRotation(AVLTreeNode<T> k3) {
+    k3.left = rightRightRotation(k3.left);
+
+    return leftLeftRotation(k3);
+}
+```
+
+RR：RightRight，称为”右右”。插入或删除一个节点后，根节点的右子树的右子树还有非空子节点，导致”根的右子树的高度”比”根的左子树的高度”大2，导致AVL树失去了平衡。
+
+![image-20210320164548129](E:\project\Blog\Notes\Algorithms\src\rr.png)
+
+```java
+/*
+ * RR：右右对应的情况(右单旋转)。
+ */
+private AVLTreeNode<T> rightRightRotation(AVLTreeNode<T> k1) {
+    AVLTreeNode<T> k2;
+
+    k2 = k1.right;
+    k1.right = k2.left;
+    k2.left = k1;
+
+    k1.height = max( height(k1.left), height(k1.right)) + 1;
+    k2.height = max( height(k2.right), k1.height) + 1;
+
+    return k2;
+}
+```
+
+RR：RightRight，称为”右右”。插入或删除一个节点后，根节点的右子树的右子树还有非空子节点，导致”根的右子树的高度”比”根的左子树的高度”大2，导致AVL树失去了平衡。
+
+![image-20210320164520236](E:\project\Blog\Notes\Algorithms\src\rl.png)
+
+```java
+/*
+ * RL：右左对应的情况(右双旋转)。
+ */
+private AVLTreeNode<T> rightLeftRotation(AVLTreeNode<T> k1) {
+    k1.right = leftLeftRotation(k1.right);
+
+    return rightRightRotation(k1);
+}
+```
+
+## 插入
+
+插入一个节点可能会破坏AVL树的平衡，可以通过旋转操作来进行修正。
+
+```java
+private AVLTreeNode<T> insert(AVLTreeNode<T> tree, T key) {
+    if (tree == null) {
+        tree = new AVLTreeNode<T>(key, null, null);
+        if (tree==null) {
+            System.out.println("ERROR: create avltree node failed!");
+            return null;
+        }
+    } else {
+        int cmp = key.compareTo(tree.key);
+
+           if (cmp < 0) {    // 应该将key插入到"tree的左子树"的情况
+            tree.left = insert(tree.left, key);
+            // 插入节点后，若AVL树失去平衡，则进行相应的调节。
+            if (height(tree.left) - height(tree.right) == 2) {
+                //插入的结点在左子树的左边
+                if (key.compareTo(tree.left.key) < 0)
+                    tree = leftLeftRotation(tree);
+                //插入的结点在左子树的右边
+                else
+                    tree = leftRightRotation(tree);
+            }
+        } else if (cmp > 0) {    // 应该将key插入到"tree的右子树"的情况
+            tree.right = insert(tree.right, key);
+            // 插入节点后，若AVL树失去平衡，则进行相应的调节。
+            if (height(tree.right) - height(tree.left) == 2) {
+                //插入的结点在右子树的右边
+                if (key.compareTo(tree.right.key) > 0)
+                    tree = rightRightRotation(tree);
+                //插入的结点在右子树的左边
+                else
+                    tree = rightLeftRotation(tree);
+            }
+        } else {    // cmp==0
+            System.out.println("添加失败：不允许添加相同的节点！");
+        }
+    }
+
+    tree.height = max( height(tree.left), height(tree.right)) + 1;
+
+    return tree;
+}
+
+public void insert(T key) {
+    mRoot = insert(mRoot, key);
+}
+```
+
+## 删除
+
+1.  当前节点为要删除的节点且是树叶（无子树），直接删除，当前节点（为None）的平衡不受影响。
+
+2.  当前节点为要删除的节点且只有一个左儿子或右儿子，用左儿子或右儿子代替当前节点，当前节点的平衡不受影响。
+
+3.  当前节点为要删除的节点且有左子树右子树:如果右子树高度较高，则从右子树选取最小节点，将其值赋予当前节点，然后删除右子树的最小节点。如果左子树高度较高，则从左子树选取最大节点，将其值赋予当前节点，然后删除左子树的最大节点。这样操作当前节点的平衡不会被破坏。
+
+4.  当前节点不是要删除的节点，则对其左子树或者右子树进行递归操作。当前节点的平衡条件可能会被破坏，需要进行平衡操作。
+
+```java
+/*
+ * 删除结点(z)，返回根节点
+ */
+private AVLTreeNode<T> remove(AVLTreeNode<T> tree, AVLTreeNode<T> z) {
+    // 根为空 或者 没有要删除的节点，直接返回null。
+    if (tree==null || z==null)
+        return null;
+
+    int cmp = z.key.compareTo(tree.key);
+    if (cmp < 0) {        // 待删除的节点在"tree的左子树"中
+        tree.left = remove(tree.left, z);
+        // 删除节点后，若AVL树失去平衡，则进行相应的调节。
+        if (height(tree.right) - height(tree.left) == 2) {
+            AVLTreeNode<T> r =  tree.right;
+            if (height(r.left) > height(r.right))
+                tree = rightLeftRotation(tree);
+            else
+                tree = rightRightRotation(tree);
+        }
+    } else if (cmp > 0) {    // 待删除的节点在"tree的右子树"中
+        tree.right = remove(tree.right, z);
+        // 删除节点后，若AVL树失去平衡，则进行相应的调节。
+        if (height(tree.left) - height(tree.right) == 2) {
+            AVLTreeNode<T> l =  tree.left;
+            if (height(l.right) > height(l.left))
+                tree = leftRightRotation(tree);
+            else
+                tree = leftLeftRotation(tree);
+        }
+    } else {    // tree是对应要删除的节点。
+        // tree的左右孩子都非空
+        if ((tree.left!=null) && (tree.right!=null)) {
+            if (height(tree.left) > height(tree.right)) {
+                AVLTreeNode<T> max = maximum(tree.left);
+                tree.key = max.key;
+                tree.left = remove(tree.left, max);
+            } else {
+                AVLTreeNode<T> min = maximum(tree.right);
+                tree.key = min.key;
+                tree.right = remove(tree.right, min);
+            }
+        } else {
+            AVLTreeNode<T> tmp = tree;
+            tree = (tree.left!=null) ? tree.left : tree.right;
+            tmp = null;
+        }
+    }
+
+    return tree;
+}
+
+public void remove(T key) {
+    AVLTreeNode<T> z;
+
+    if ((z = search(mRoot, key)) != null)
+        mRoot = remove(mRoot, z);
+}
+```
+
+
 
 ## 判断是否为平衡二叉树
 

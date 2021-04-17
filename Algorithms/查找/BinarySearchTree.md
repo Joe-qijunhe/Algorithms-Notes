@@ -184,7 +184,7 @@ public class BST<Key extends Comparable<Key>, Value> {
 -   如果w有左子树，那么倒数第二大的键就在这左子树中，在左子树中找到最大结点并返回。（因为w的左子树中的结点肯定比w的父结点大）
 -   如果w没有左子树，倒数第二大的键是它的父结点。
 
-## 向上取整和向下取整
+    ## 向上取整和向下取整
 
 向下取整：
 
@@ -478,20 +478,6 @@ private void range(Node x, Queue<Key> queue, Key lo, Key hi) {
 }
 ```
 
-## 高度
-
-a 1-node tree has height 0
-
-```java
-    public int height() {
-        return height(root);
-    }
-    private int height(Node x) {
-        if (x == null) return -1;
-        return 1 + Math.max(height(x.left), height(x.right));
-    }
-```
-
 ## 检查
 
 只检查每个结点的左子结点小于当前结点，右子结点大于当前结点是不行的。
@@ -549,5 +535,130 @@ graph TD
             if (i != rank(select(i))) return false;
         for (Key key : keys())
             if (key.compareTo(select(rank(key))) != 0) return false;
+```
+
+## Morris遍历
+
+通过O(1)空间实现树的遍历
+
+### 中序
+
+二叉搜索树的中序遍历的结果是一个有序数组，中序遍历可以转化为对后继节点的计算过程，后继节点的计算方法为：
+
+1.  对于存在右子树的节点A，其后继节点是其右子树中最左侧的节点
+2.  对于没有右子树的节点B，其后继节点是其自下而上的父节点中第一个将其作为左子树的节点
+
+节点A的后继计算非常简单。然而由于二叉树的信息中不包括父节点的信息，因此第2条操作起来非常困难，这也是为何之前采用了栈/队列的方式存储父节点的信息。
+
+但是我们注意到，虽然对于这样的节点B，求取其后继节点非常困难；但是其后继节点来说，由于节点B是其子树中的一个节点，因此求前驱节点就很容易了！为了使得访问到节点B时能够直接得到后继信息，我们可以暂时使用B节点右子树的链接，存储后继节点，以实现对后继节点的直接获取，同时不占用额外的空间。这就是Morris遍历算法的主要思想。
+
+计算过程：
+
+1.  从根节点开始访问。
+2.  如果当前节点C不存在左子树，按中序遍历的规则，应当访问节点C，并进入其右子树进行遍历。
+3.  如果当前节点C存在左子树，就找到C的前驱节点B，并将B的右孩子指向C（存储后继），同时当前节点转入左子树进行遍历。
+4.  步骤2中访问右子树时，如果节点本身没有右子树，则会直接转入其后继节点C。根据中序遍历的规则，说明此时C的左子树遍历完成。为了还原树结构，我们需要重新找到C的前驱节点，并将其右孩子设置为null。之后我们访问节点C，并进入其右子树进行遍历。
+
+```java
+public void morrisInOrderTraversal(TreeNode root) {
+	TreeNode node = root, prev = null; // 仅存放两个临时变量，O(1)空间复杂度
+	while (node != null) { // 当前节点为空时，说明访问完成
+		if (node.left == null) { // 左子树不存在时，访问+进入右节点
+			visit(node);
+			node = node.right;
+		} else { // 左子树存在，寻找前驱节点。注意寻找前驱节点时，会不断深入右子树。不加判断时，若前驱节点的右子树已指向自己，会引起死循环
+			prev = node.left;
+			while (prev.right != null && prev.right != node) prev = prev.right;
+			if (prev.right == null) { // 前驱节点未访问过，存放后继节点
+				prev.right = node;
+				node = node.left;
+			} else { // 前驱节点已访问过，恢复树结构
+				visit(node); // 确定访问过左子树后，访问当前节点
+				prev.right = null;
+				node = node.right;
+			}
+		}
+	}
+}
+```
+
+### 先序
+
+```java
+public void morrisPreOrderTraversal(TreeNode root) {
+	TreeNode node = root, prev = null; // 仅存放两个临时变量，O(1)空间复杂度
+	while (node != null) { // 当前节点为空时，说明访问完成
+		if (node.left == null) { // 左子树不存在时，访问+进入右节点
+			visit(node);
+			node = node.right;
+		} else { // 左子树存在，寻找前驱节点。注意寻找前驱节点时，会不断深入右子树。不加判断时，若前驱节点的右子树已指向自己，会引起死循环
+			prev = node.left;
+			while (prev.right != null && prev.right != node) prev = prev.right;
+			if (prev.right == null) { // 前驱节点未访问过，存放后继节点
+				visit(node); // 在确定前驱节点未访问过时，访问当前节点（注意与中序遍历的区别）
+				prev.right = node;
+				node = node.left;
+			} else { // 前驱节点已访问过，恢复树结构
+				prev.right = null;
+				node = node.right;
+			}
+		}
+	}
+}
+```
+
+### 后序
+
+若一个节点是右孩子，或该节点是左孩子但是没有兄弟节点，则访问完该节点后立刻会访问该节点的父节点
+
+推广到Morris遍历里，可以得到：当访问到任何节点C的前驱节点B时，由B到C的路径（不包括节点C）即为之后的访问顺序。
+
+注意为了保证程序能够顺利访问右子树，为根节点添加了一个哨兵节点：
+
+```java
+public void morrisPostOrderTraversal(TreeNode root) {
+	TreeNode temp = new TreeNode(new Value(Value.INVALID_VALUE)), node = temp, prev = null; // 仅存放一个“哨兵”节点和两个临时变量，O(1)空间复杂度
+	temp.left = root;
+	while (node != null) { // 当前节点为空时，说明访问完成
+		if (node.left == null) { // 左子树不存在时，进入右节点
+			node = node.right;
+		} else { // 左子树存在，寻找前驱节点。注意寻找前驱节点时，会不断深入右子树。不加判断时，若前驱节点的右子树已指向自己，会引起死循环
+			prev = node.left;
+			while (prev.right != null && prev.right != node) prev = prev.right;
+			if (prev.right == null) { // 前驱节点未访问过，存放后继节点
+				prev.right = node;
+				node = node.left;
+			} else { // 前驱节点已访问过，恢复树结构
+				visitReverse(node.left, prev); // 确定访问过左子树后，逆序访问沿路节点（注意与中序遍历的区别）
+				prev.right = null;
+				node = node.right;
+			}
+		}
+	}
+}
+
+public void visitReverse(TreeNode node1, TreeNode node2) {
+	reverse(node1, node2); // 首先进行翻转
+	TreeNode node = node2; // 之后进行顺序访问
+	while (node != node1) {
+		visit(node);
+		node = node.right;
+	}
+	visit(node1);
+	reverse(node2, node1); // 恢复结构
+}
+
+public void reverse(TreeNode node1, TreeNode node2) {
+	// 实现链表翻转
+	TreeNode prev = node1;
+	TreeNode current = prev.right;
+	TreeNode next = current.right;
+	while (prev != node2) {
+		current.right = prev;
+		prev = current;
+		current = next;
+		next = next.right;
+	}
+}
 ```
 

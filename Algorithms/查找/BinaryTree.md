@@ -12,6 +12,8 @@
 
 看输出父结点的顺序，确定前中后序
 
+### 递归
+
 ```java
 class Node<Value> {
     public Value val;
@@ -76,6 +78,113 @@ public class BinaryTree<Value> {
 }
 
 ```
+
+### 非递归
+
+前序
+
+```java
+public void preOrderTraversal(TreeNode root) {
+	if (root == null) return;
+	Stack<TreeNode> stack = new Stack<TreeNode>(); // 利用栈进行临时存储
+	stack.push(root);
+
+	while (!stack.isEmpty()) {
+		TreeNode node = stack.pop(); // 取出一个节点，表示开始访问以该节点为根的子树
+		visit(node); // 首先访问该节点（先序），之后顺序入栈右子树、左子树
+		if (node.right != null) stack.push(node.right);
+		if (node.left != null) stack.push(node.left);
+	}
+}
+//或者在节点到达null层时进行判断
+public void preOrderTraversal2(TreeNode root) {
+	if (root == null) return;
+	Stack<TreeNode> stack = new Stack<TreeNode>(); // 利用栈进行临时存储
+	TreeNode node = root;
+	
+	while (!stack.isEmpty() || node != null) { // stack为空且node为null时，说明已经遍历结束
+		if (node != null) { // 可以深入左孩子时，先访问，再深入
+			visit(node);
+			stack.push(node);
+			node = node.left;
+		} else { // 否则深入栈中节点的右孩子
+			node = stack.pop().right;
+		}
+	}
+}
+```
+
+中序
+
+```java
+//若节点还有左子树，就要先把左子树访问完
+//没有左子树可访问时，访问该节点，并尝试访问右子树
+public void inOrderTraversal(TreeNode root) {
+	if (root == null) return;
+	Stack<TreeNode> stack = new Stack<TreeNode>(); // 利用栈进行临时存储
+	TreeNode node = root;
+	
+	while (node != null) { // 当node为null时，说明已经遍历结束
+		if (node.left != null) { // 存在左子树时，入栈并深入左子树
+			stack.push(node);
+			node = node.left;
+		} else { // 否则就寻找可以深入右子树的节点
+			while (!stack.isEmpty() && node.right == null) {
+				// 对于不能深入右子树的节点：直接访问，此时子树访问结束
+				visit(node);
+				node = stack.pop();
+			}
+			visit(node); // 如果可以深入右子树，访问该节点后，深入右子树
+			node = node.right;
+		}
+	}
+}
+//或在节点出栈时访问节点
+public void inOrderTraversal2(TreeNode root) {
+	if (root == null) return;
+	Stack<TreeNode> stack = new Stack<TreeNode>(); // 利用栈进行临时存储
+	TreeNode node = root;
+	
+	while (!stack.isEmpty() || node != null) { // stack为空且node为null时，说明已经遍历结束
+		if (node != null) { // 可以深入左孩子
+			stack.push(node);
+			node = node.left;
+		} else { // 否则访问栈中节点，并深入右孩子
+			node = stack.pop();
+			visit(node);
+			node = node.right;
+		}
+	}
+}
+```
+
+后序
+
+```java
+//尝试按顺序访问该节点的左右子树
+//当左右子树都访问完毕时，才可以访问该节点
+public void postOrderTraversal(TreeNode root) {
+	if (root == null) return;
+	Stack<TreeNode> stack = new Stack<TreeNode>(); // 利用栈进行临时存储
+	stack.push(root);
+	TreeNode lastNode = root; // 为了判断父子节点关系
+	
+	while (!stack.isEmpty()) {
+		TreeNode node = stack.pop(); // 取出一个节点，表示开始访问以该节点为根的子树
+		if ((node.left == null && node.right == null) || // 如果该节点为叶子节点
+			(node.left == lastNode || node.right == lastNode)) { // 或者已经访问过该节点的子节点
+			visit(node); // 直接访问
+			lastNode = node;
+		} else { // 否则就按顺序把当前节点、右孩子、左孩子入栈
+			stack.push(node); 
+			if (node.right != null) stack.push(node.right);
+			if (node.left != null) stack.push(node.left);
+		}
+	}
+}
+```
+
+
 
 ## 查找
 

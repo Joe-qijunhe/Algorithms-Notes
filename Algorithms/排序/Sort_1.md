@@ -142,6 +142,8 @@ public class Selection {
 >       说明：
 >
 >       每次交换都改变了两个顺序颠倒的元素的位置，相当于减少了一对倒置，当倒置数量为0时，排序就完成了。
+>       
+>       an inversion is a pair of indices i < j such that A[i] > A[j]. 可以认为插入排序时间复杂度为O(n + I)，n是数组大小，I是倒置的数量。
 
 ```java
 public class Insertion {
