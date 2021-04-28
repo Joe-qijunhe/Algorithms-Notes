@@ -73,7 +73,7 @@ LL：LeftLeft，也称为”左左”。插入或删除一个节点后，根节�
 
 
 
-![image-20210320164411839](E:\project\Blog\Notes\Algorithms\src\ll.png)
+![image-20210320164411839](..\src\AVL\ll.png)
 
 ```java
     private AVLTreeNode<T> leftLeftRotation(AVLTreeNode<T> k2) {
@@ -92,7 +92,7 @@ LL：LeftLeft，也称为”左左”。插入或删除一个节点后，根节�
 
 LR：LeftRight，也称为”左右”。插入或删除一个节点后，根节点的左子树的右子树还有非空子节点，导致”根的左子树的高度”比”根的右子树的高度”大2，导致AVL树失去了平衡。（k1还是平衡的，k3检测到不平衡时，如果只用左旋或者右旋是解决不了问题的，因为会把k2挂到k3的左边，还是不平衡。所以需要旋转两次）
 
-![image-20210320164448217](E:\project\Blog\Notes\Algorithms\src\lr.png)
+![image-20210320164448217](..\src\AVL\lr.png)
 
 ```java
     private AVLTreeNode<T> leftRightRotation(AVLTreeNode<T> k3) {
@@ -103,7 +103,7 @@ LR：LeftRight，也称为”左右”。插入或删除一个节点后，根节
 
 RR：RightRight，称为”右右”。插入或删除一个节点后，根节点的右子树的右子树还有非空子节点，导致”根的右子树的高度”比”根的左子树的高度”大2，导致AVL树失去了平衡。
 
-![image-20210320164548129](E:\project\Blog\Notes\Algorithms\src\rr.png)
+![image-20210320164548129](..\src\AVL\rr.png)
 
 ```java
     private AVLTreeNode<T> rightRightRotation(AVLTreeNode<T> k1) {
@@ -122,7 +122,7 @@ RR：RightRight，称为”右右”。插入或删除一个节点后，根节�
 
 RR：RightRight，称为”右右”。插入或删除一个节点后，根节点的右子树的右子树还有非空子节点，导致”根的右子树的高度”比”根的左子树的高度”大2，导致AVL树失去了平衡。
 
-![image-20210320164520236](E:\project\Blog\Notes\Algorithms\src\rl.png)
+![image-20210320164520236](..\src\AVL\rl.png)
 
 ```java
     private AVLTreeNode<T> rightLeftRotation(AVLTreeNode<T> k1) {

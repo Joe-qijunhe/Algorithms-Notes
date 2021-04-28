@@ -215,7 +215,7 @@ public static void sort(Comparable[] a) {
 
 如图，长度为16的数组初始步长为13，第二轮while，步长h变成了4
 
-![ShellSort](E:\project\Blog\Notes\Algorithms\src\ShellSort.jpg)
+![ShellSort](..\src\shellsort\ShellSort.jpg)
 
 1 0 2 3 5 7 2 6 1 0 10 4 9 3 3 7 
 1 0 2 3 1 0 2 4 5 3 3 6 9 7 10 7 
