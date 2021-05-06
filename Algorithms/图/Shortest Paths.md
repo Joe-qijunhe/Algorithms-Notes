@@ -342,3 +342,46 @@ public class BellmanFordSP {
 }
 ```
 
+## Floyd算法
+
+Dijkstra是求单点最短路径，只能求从一个顶点出发的最短路径。Floyd-Warshall算法（Floyd-Warshall algorithm）是解决任意两点间的最短路径的一种算法，可以正确处理有向图或负权的最短路径问题，同时也被用于计算有向图的传递闭包。
+
+对于每个顶点v，和任意一顶点对(i, j)，i不等于j，v不等于i，v不等于j，如果A [i] [j] > A [i] [v] + A [v] [j]，则将A [i] [j]更新为 A [i] [v] + A [v] [j]的值，并将Path [i] [j] 改为v。
+
+graph存储了边的权重，如graph[1] [0] = 3意味着结点1到结点0的权重为3，如果两点之间没有边相连，则权为无穷大（Double.POSITIVE_INFINITY）。
+
+```java
+    public int[][] floyd(double[][] graph) {
+        int n = graph.length;
+        int[][] path = new int[n][n];
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                path[i][j] = -1;
+            }
+        }
+        //中间点
+        for (int v = 0; v < n; v++) {
+            //所有的顶点对
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    if (graph[i][j] > graph[i][v] + graph[v][j]) {
+                        graph[i][j] = graph[i][v] + graph[v][j];
+                        path[i][j] = v;
+                    }
+                }
+            }
+        }
+        return path;
+    }
+	
+    public void printPath(int[][] path, int u, int v) {
+        if (path[u][v] == -1) {
+            System.out.println(u + " " + v);
+        } else {
+            int mid = path[u][v];
+            printPath(path, u, mid);
+            printPath(path, mid, v);
+        }
+    }
+```
+

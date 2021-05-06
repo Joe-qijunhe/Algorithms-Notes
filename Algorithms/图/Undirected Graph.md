@@ -660,19 +660,6 @@ public class Bridge {
                 low[v] = Math.min(low[v], pre[w]);
         }
     }
-
-    // test client
-    public static void main(String[] args) {
-        int V = Integer.parseInt(args[0]);
-        int E = Integer.parseInt(args[1]);
-        Graph G = GraphGenerator.simple(V, E);
-        StdOut.println(G);
-
-        Bridge bridge = new Bridge(G);
-        StdOut.println("Edge connected components = " + bridge.components());
-    }
-
-
 }
 ```
 

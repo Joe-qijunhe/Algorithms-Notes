@@ -19,6 +19,8 @@
 
 ## 加权无向图
 
+带权重的边
+
 ```java
 public class Edge implements Comparable<Edge> {
     private final int v;    //顶点之一
@@ -62,6 +64,8 @@ public class Edge implements Comparable<Edge> {
     }
 }
 ```
+
+加权无向图
 
 ```java
 import Chapter1.Bag;
@@ -115,7 +119,7 @@ public class EdgeWeightedGraph {
 
 
 
-## Primer算法
+## Prim算法
 
 ### 延时实现
 
@@ -175,7 +179,7 @@ public class LazyPrimMST {
 
 PrimeST会从优先队列取出一个顶点v并检查它的邻接表中的每条边v-w。如果w已经被标记过，这条边失效；如果w不在优先队列中或者v-w的权重小于目前已知的最小值edgeTo[w]，更新数组，将v-w作为将w和树连接的最佳选择。
 
-索引优先队列：Key[]中index代表顶点 value代表该顶点到树的最小权重 ，pq根据权重进行排序，delMin()会（int min = pq[1]; keys[min] = null; return min; ）返回Key[]中的index（即返回下一个加入树的点）
+索引优先队列：Key[]中index代表顶点, value代表该顶点到树的最小权重 ，pq根据权重进行排序，delMin()会（int min = pq[1]; keys[min] = null; return min; ）返回Key[]中的index（即返回下一个加入树的点）
 
 ```java
 import Chapter1.Queue;
