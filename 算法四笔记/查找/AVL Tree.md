@@ -142,7 +142,7 @@ RR：RightRight，称为”右右”。插入或删除一个节点后，根节�
         } else {
             int cmp = key.compareTo(tree.key);
 
-            if (cmp < 0) {    // 应该将key插入到"tree的左子树"的情况
+            if (cmp < 0) {    
                 tree.left = insert(tree.left, key);
                 // 插入节点后，若AVL树失去平衡，则进行相应的调节。
                 if (height(tree.left) - height(tree.right) == 2) {
@@ -153,7 +153,7 @@ RR：RightRight，称为”右右”。插入或删除一个节点后，根节�
                     else
                         tree = leftRightRotation(tree);
                 }
-            } else if (cmp > 0) {    // 应该将key插入到"tree的右子树"的情况
+            } else if (cmp > 0) {    
                 tree.right = insert(tree.right, key);
                 // 插入节点后，若AVL树失去平衡，则进行相应的调节。
                 if (height(tree.right) - height(tree.left) == 2) {
@@ -189,10 +189,9 @@ RR：RightRight，称为”右右”。插入或删除一个节点后，根节�
 
 ```java
     private AVLTreeNode<T> remove(AVLTreeNode<T> tree, T key) {
-        // 根为空 或者 没有要删除的节点，直接返回null。
         if (tree == null) return null;
         int cmp = key.compareTo(tree.key);
-        if (cmp < 0) {        // 待删除的节点在"tree的左子树"中
+        if (cmp < 0) {       
             tree.left = remove(tree.left, key);
             // 删除节点后，若AVL树失去平衡，则进行相应的调节。
             if (height(tree.right) - height(tree.left) == 2) {
@@ -202,7 +201,7 @@ RR：RightRight，称为”右右”。插入或删除一个节点后，根节�
                 else
                     tree = rightRightRotation(tree);
             }
-        } else if (cmp > 0) {    // 待删除的节点在"tree的右子树"中
+        } else if (cmp > 0) {  
             tree.right = remove(tree.right, key);
             // 删除节点后，若AVL树失去平衡，则进行相应的调节。
             if (height(tree.left) - height(tree.right) == 2) {
@@ -220,7 +219,7 @@ RR：RightRight，称为”右右”。插入或删除一个节点后，根节�
                     tree.key = max.key;
                     tree.left = remove(tree.left, max.key);
                 } else {
-                    AVLTreeNode<T> min = maximum(tree.right);
+                    AVLTreeNode<T> min = minimum(tree.right);
                     tree.key = min.key;
                     tree.right = remove(tree.right, min.key);
                 }
@@ -289,4 +288,6 @@ class Solution {
     }
 }
 ```
+
+
 

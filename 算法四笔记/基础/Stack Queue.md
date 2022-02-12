@@ -317,7 +317,7 @@ public class Parentheses {
 >
 >   输出：( ( 1+2 ) * ( ( 3-4) * ( 5-6 ) ) )
 
-遇到 ），ops pop出一个运算符，vales pop出两个值，写成 (val1 ? val2) 再push到vales里
+遇到 ），ops pop出一个运算符，vales pop出两个值，写成 (val1 op val2) 再push到vales里
 
 ```java
 package LinkedPrac;
@@ -510,9 +510,9 @@ StdOut.println(stack.pop());
 
 ```java
 Node(Node x) {
-   item = x.item;
+   this.item = x.item;
    if (x.next != null) 
-       next = new Node(x.next);
+       this.next = new Node(x.next);
 }
 
 public Stack(Stack<Item> s) {

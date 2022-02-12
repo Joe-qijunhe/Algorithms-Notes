@@ -193,7 +193,7 @@ public class BST<Key extends Comparable<Key>, Value> {
 
 -   如果给定的key大于二叉查找树的根结点的键，那么只有当根结点右子树存在小于等于key的节点时，小于等于key的最大键才会出现在右子树中，否则根结点就是小于等于key的最大键。
 
-例子：3，4，5，插入3.2和4.2，root = 4
+例子：3，4，5，查找3.2和4.2，root = 4
 
 ```java
     public Key floor(Key key){
@@ -396,7 +396,7 @@ private void print(Node x){
 }
 ```
 
-将所有落在给定范围以内的键加入一个队列Queue。递归地查找根结点地左子树，然后查找根结点，然后递归地查找根结点地右子树。
+将所有落在给定范围以内的键加入一个队列Queue。递归地查找根结点地左子树，然后查找根结点，然后递归地查找根结点地右子树（类似in order）。
 
 ```java
     public Iterable<Key> keys(){
@@ -423,7 +423,7 @@ private void print(Node x){
     }
 ```
 
-迭代：
+返回所有keys的迭代实现：
 
 ```java
    public Iterable<Key> keys() {
