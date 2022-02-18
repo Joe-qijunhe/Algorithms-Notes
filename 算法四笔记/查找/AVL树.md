@@ -212,6 +212,7 @@ RR：RightRight，称为”右右”。插入或删除一个节点后，根节�
         } else {    // tree是对应要删除的节点。
             // tree的左右孩子都非空
             if ((tree.left != null) && (tree.right != null)) {
+                // 左边树高就用前驱结点补
                 if (height(tree.left) > height(tree.right)) {
                     AVLTreeNode<T> max = maximum(tree.left);
                     tree.key = max.key;
